@@ -93,7 +93,7 @@ function boot(){
     const b=e.target.closest("[data-radar]");
     if(b) showDetail(state.rows[+b.dataset.radar]);
   });
-  const closeEl=$("detail❌"); if(closeEl) closeEl.addEventListener("click",()=>$( "detail").classList.add("hidden"));
+  const closeEl=$("detailClose"); if(closeEl) closeEl.addEventListener("click",()=>$( "detail").classList.add("hidden"));
   const themeEl=$("theme"); if(themeEl) themeEl.addEventListener("click",()=>{
     const dark=document.documentElement.dataset.theme==="dark";
     document.documentElement.dataset.theme=dark?"":"dark";
