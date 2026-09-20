@@ -68,7 +68,37 @@ function renderRadar(){const a=state.rows.filter(r=>open(r)&&rem(r)!==null).sort
 function renderTrends(){const m=new Map();state.rows.forEach(r=>split(v(r,"discipline")).forEach(x=>m.set(x,(m.get(x)||0)+1)));$("trendList").innerHTML=[...m.entries()].sort((a,b)=>b[1]-a[1]).slice(0,7).map(([x,n])=>'<div class="trend-row"><span>'+esc(x)+'</span><strong>'+n+'</strong></div>').join("")}
 function setData(rows,label){if(!Array.isArray(rows)||!rows.length)return;state.rows=rows;stats();filters();apply();const s=$("sourceStatus");if(s)s.textContent=label;const u=$("updated");if(u)u.textContent="Updated "+new Date().toLocaleString()}
 async function loadLocalSnapshot(){const t=Date.now();try{const r=await fetch("./data/opportunities.json?t="+t,{cache:"no-store"});if(!r.ok)throw new Error("snapshot HTTP "+r.status);const d=await r.json();if(!Array.isArray(d)||!d.length)throw new Error("snapshot empty");cache(d);setData(d,"● GitHub · Google Sheet sync");try{const m=await fetch("./data/last_sync.json?t="+t,{cache:"no-store"});if(m.ok){const meta=await m.json();if(meta&&meta.row_count!=null){const s=$("sourceStatus");if(s)s.textContent="● Google Sheet synced · "+meta.row_count+" rows";}}}catch(e){}return true}catch(e){try{const c=JSON.parse(localStorage.getItem("scholarnews-data-v4")||"null");if(Array.isArray(c)&&c.length){setData(c,"● Cached data");return false}}catch(e){}setData(FALLBACK_DATA,"● GitHub snapshot");const s=$("sourceStatus");if(s)s.title=String(e&&e.message||e);return false}}
-function cache(d){try{localStorage.setItem("scholarnews-data-v4",JSON.stringify(d))}catch(efunction boot(){setData(FALLBACK_DATA,"● GitHub snapshot");$("q").addEventListener("input",apply);document.querySelectorAll(".filters select,.filters input").forEach(x=>x.addEventListener("change",apply));$("sort").addEventListener("change",e=>{state.sort=e.target.value;apply()});$("clear").addEventListener("click",()=>{document.querySelectorAll(".filters select").forEach(x=>x.value="");document.querySelectorAll(".filters input").forEach(x=>x.value="");$("q").value="";state.category="";apply()});$("prev").addEventListener("click",()=>{if(state.page>1){state.page--;render()}});$("next").addEventListener("click",()=>{if(state.page<Math.ceil(state.filtered.length/state.size)){state.page++;render()}});$("grid").addEventListener("click",e=>{const b=e.target.closest("[data-detail]");if(b)showDetail(state.filtered[+b.dataset.detail])});$("radarList").addEventListener("click",e=>{const b=e.target.closest("[data-radar]");if(b)showDetail(state.rows[+b.dataset.radar])});$("detailClose").addEventListener("click",()=>$("detail").classList.add("hidden"));$("theme").addEventListener("click",()=>{const dark=document.documentElement.dataset.theme==="dark";document.documentElement.dataset.theme=dark?"":"dark";localStorage.setItem("scholarnews-theme",dark?"":"dark")});$("refresh").addEventListener("click",()=>loadLocalSnapshot());loadLocalSnapshot();if(localStorage.getItem("scholarnews-theme")==="dark")document.documentElement.dataset.theme="dark"}
-e()}
+function cache(d){try{localStorage.setItem("scholarnews-data-v4",JSON.stringify(d))}catch(e){}}
+function boot(){
+  setData(FALLBACK_DATA,"● ScholarNews build 2026-09-21");
+  const qEl=$("q"); if(qEl) qEl.addEventListener("input",apply);
+  document.querySelectorAll(".filters select,.filters input").forEach(x=>x.addEventListener("change",apply));
+  const sortEl=$("sort"); if(sortEl) sortEl.addEventListener("change",e=>{state.sort=e.target.value;apply()});
+  const clearEl=$("clear"); if(clearEl) clearEl.addEventListener("click",()=>{
+    document.querySelectorAll(".filters select").forEach(x=>x.value="");
+    document.querySelectorAll(".filters input").forEach(x=>x.value="");
+    if(qEl) qEl.value="";
+    state.category=""; apply();
+  });
+  const prevEl=$("prev"); if(prevEl) prevEl.addEventListener("click",()=>{if(state.page>1){state.page--;render()}});
+  const nextEl=$("next"); if(nextEl) nextEl.addEventListener("click",()=>{if(state.page<Math.ceil(state.filtered.length/state.size)){state.page++;render()}});
+  const gridEl=$("grid"); if(gridEl) gridEl.addEventListener("click",e=>{
+    const b=e.target.closest("[data-detail]");
+    if(b) showDetail(state.filtered[+b.dataset.detail]);
+  });
+  const radarEl=$("radarList"); if(radarEl) radarEl.addEventListener("click",e=>{
+    const b=e.target.closest("[data-radar]");
+    if(b) showDetail(state.rows[+b.dataset.radar]);
+  });
+  const closeEl=$("detailClose"); if(closeEl) closeEl.addEventListener("click",()=>$( "detail").classList.add("hidden"));
+  const themeEl=$("theme"); if(themeEl) themeEl.addEventListener("click",()=>{
+    const dark=document.documentElement.dataset.theme==="dark";
+    document.documentElement.dataset.theme=dark?"":"dark";
+    localStorage.setItem("scholarnews-theme",dark?"":"dark");
+  });
+  const refreshEl=$("refresh"); if(refreshEl) refreshEl.addEventListener("click",()=>loadLocalSnapshot());
+  const saved=localStorage.getItem("scholarnews-theme"); if(saved==="dark") document.documentElement.dataset.theme="dark";
+  loadLocalSnapshot();
+}
 document.addEventListener("DOMContentLoaded",boot);
 </script></body></html>
