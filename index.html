@@ -3,80 +3,129 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="description" content="ScholarNews — science and technology opportunities">
+<meta name="description" content="ScholarNews — jobs, postdocs, fellowships, scholarships, internships, awards, conferences and training opportunities.">
+<meta name="theme-color" content="#174ab4">
 <title>ScholarNews — Opportunities</title>
-<style>
-:root{--bg:#f4f7fb;--surface:#fff;--surface2:#eef3f9;--text:#122033;--muted:#5c6b7d;--border:#d9e0e8;--accent:#1848c7;--good:#147a4b;--bad:#a52e2e;--urgent:#b42318}
-[data-theme=dark]{--bg:#0a1020;--surface:#101a2d;--surface2:#17233a;--text:#f2f6fb;--muted:#a8b5c7;--border:#2b3a53;--accent:#8eb1ff;--good:#56d39a;--bad:#ff8e8e;--urgent:#ff9c8f}
-*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:var(--bg);color:var(--text);line-height:1.45}
-.shell{width:min(1400px,calc(100% - 32px));margin:auto}.hero{background:linear-gradient(135deg,#09111f,#1745a9);color:#fff;padding:22px 0 42px}.top{display:flex;align-items:center;gap:14px}.brand{font-weight:900;font-size:1.45rem;color:#fff;text-decoration:none}.mode{margin-left:auto;background:#ffffff18;color:#fff;border:1px solid #ffffff33;border-radius:10px;padding:8px 10px;cursor:pointer}.source{margin-left:auto;padding:6px 10px;border-radius:999px;background:#ffffff18;border:1px solid #ffffff33;font-size:.75rem}.hero h1{font-size:clamp(34px,6vw,68px);line-height:1;margin:48px 0 10px}.hero p{max-width:780px;opacity:.86}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:20px 0}.stat,.panel,.card,.social{background:var(--surface);border:1px solid var(--border);border-radius:16px}.stat{padding:16px}.stat span{color:var(--muted);font-size:.82rem}.stat b{display:block;font-size:1.6rem;margin-top:4px}.panel{padding:18px}.panel h2{margin:0 0 14px}.searchrow{display:flex;gap:10px;margin-bottom:14px}.searchrow input{flex:1}.input,.filters select,.filters input,.sortbar select,.btn{font:inherit}.input,.filters select,.filters input,.sortbar select{width:100%;padding:10px;border:1px solid var(--border);border-radius:10px;background:var(--surface2);color:var(--text)}.btn{padding:10px 13px;border:1px solid var(--border);border-radius:10px;background:var(--surface);color:var(--text);cursor:pointer}.filters{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.filters label,.sortbar label{display:flex;flex-direction:column;gap:5px;color:var(--muted);font-size:.78rem}.sortbar{display:flex;justify-content:space-between;gap:12px;align-items:end;margin:16px 0}.sortright{display:flex;gap:10px}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.card{padding:16px;display:flex;flex-direction:column;min-height:330px}.card h3{margin:0;line-height:1.25}.muted{color:var(--muted);font-size:.82rem}.badges,.tags{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}.badge,.tag{padding:5px 8px;border-radius:999px;background:var(--surface2);font-size:.73rem}.open{color:var(--good)}.closed{color:var(--bad)}.urgent{color:var(--urgent);font-weight:800}.meta{display:grid;gap:7px;color:var(--muted);font-size:.82rem}.meta b{color:var(--text)}.actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:auto;padding-top:14px}.primary{background:var(--accent);border-color:var(--accent);color:#fff}.empty{text-align:center;color:var(--muted);padding:48px}.pager{display:flex;justify-content:center;gap:10px;align-items:center;margin:20px 0 36px}.social{padding:18px;margin-bottom:48px}.links{display:flex;flex-wrap:wrap;gap:8px}.links a{padding:8px 10px;border:1px solid var(--border);border-radius:10px;color:var(--text);text-decoration:none}.modal{position:fixed;inset:0;background:#0008;display:flex;align-items:center;justify-content:center;padding:16px}.hidden{display:none!important}.dialog{width:min(920px,100%);max-height:90vh;overflow:auto;background:var(--surface);border-radius:18px;padding:22px;position:relative}.x{position:absolute;right:12px;top:10px}.detailgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.detailgrid div{padding:10px;background:var(--surface2);border-radius:10px}.detailgrid small{display:block;color:var(--muted);margin-bottom:3px}.notice{margin:12px 0 0;padding:9px 11px;border-radius:10px;background:var(--surface2);color:var(--muted);font-size:.8rem}
-@media(max-width:1100px){.grid{grid-template-columns:repeat(2,1fr)}.filters{grid-template-columns:repeat(3,1fr)}.stats{grid-template-columns:repeat(2,1fr)}}@media(max-width:760px){.filters{grid-template-columns:repeat(2,1fr)}.sortbar{flex-direction:column;align-items:stretch}.sortright{justify-content:space-between}}@media(max-width:520px){.shell{width:calc(100% - 20px)}.stats,.filters,.grid,.detailgrid{grid-template-columns:1fr}.searchrow{flex-direction:column}.sortright{flex-direction:column}}
-</style>
+<link rel="stylesheet" href="./styles.css">
 </head>
 <body>
-<header class="hero">
-<div class="shell">
-<div class="top"><a class="brand" href="./">ScholarNews</a><span>Science &amp; Technology Opportunities</span><span id="sourceStatus" class="source">Loading live Google Sheet…</span><button id="theme" class="mode" type="button">☾</button></div>
-<h1>Find your next opportunity.</h1>
-<p>Live opportunities loaded directly from the ScholarNews Google Sheet, with a cached GitHub fallback.</p>
-<div id="updated"></div>
-</div>
+<header class="site-header">
+  <div class="shell topbar">
+    <a class="brand" href="./">ScholarNews</a>
+    <span class="muted">Science &amp; Technology Opportunities</span>
+    <nav class="nav" aria-label="Opportunity categories">
+      <button class="chip active" type="button" data-nav="All">All</button>
+      <button class="chip" type="button" data-nav="Jobs">Jobs</button>
+      <button class="chip" type="button" data-nav="Scholarships">Scholarships</button>
+      <button class="chip" type="button" data-nav="Fellowships">Fellowships</button>
+      <button class="chip" type="button" data-nav="Internships">Internships</button>
+      <button class="chip" type="button" data-nav="Awards">Awards</button>
+      <button class="chip" type="button" data-nav="Conferences">Conferences</button>
+      <button class="chip" type="button" data-nav="Training">Training</button>
+    </nav>
+    <button id="themeBtn" class="theme" type="button" aria-label="Toggle dark mode">☾</button>
+  </div>
+  <div class="shell hero">
+    <div>
+      <div class="eyebrow">SCHOLAR NEWS</div>
+      <h1>Find your next academic opportunity.</h1>
+      <p>Discover jobs, postdocs, fellowships, scholarships, internships, awards, conferences and training programs from one searchable source.</p>
+    </div>
+    <div class="hero-side">
+      <div class="live">
+        <div class="live-row"><span>Data source</span><strong id="sourceStatus">Loading…</strong></div>
+        <div class="live-row"><span>Last refresh</span><strong id="updated">—</strong></div>
+        <div class="live-row"><span>Urgent deadlines</span><strong id="statUrgent">0</strong></div>
+      </div>
+    </div>
+  </div>
 </header>
-<main class="shell">
-<section class="stats">
-<div class="stat"><span>Opportunities</span><b id="total">0</b></div>
-<div class="stat"><span>Open / Active</span><b id="open">0</b></div>
-<div class="stat"><span>Countries</span><b id="countries">0</b></div>
-<div class="stat"><span>Institutions</span><b id="institutions">0</b></div>
-</section>
-<section class="panel">
-<h2>Discover — Optimizers &amp; Filters</h2>
-<div class="searchrow"><input id="search" class="input" placeholder="Search title, field, institution, country, keywords, hashtags…"><button id="reset" class="btn" type="button">Reset</button></div>
-<div class="filters">
-<label>Opportunity type<select id="type"><option value="">All</option></select></label>
-<label>Country<select id="country"><option value="">All</option></select></label>
-<label>Hosting institution<select id="inst"><option value="">All</option></select></label>
-<label>Level<select id="level"><option value="">All</option></select></label>
-<label>Organization type<select id="org"><option value="">All</option></select></label>
-<label>Field / Discipline<select id="field"><option value="">All</option></select></label>
-<label>Status<select id="status"><option value="">All</option><option value="open">Open / Active</option><option value="closed">Closed</option></select></label>
-<label>Published from<input id="pf" type="date"></label>
-<label>Published to<input id="pt" type="date"></label>
-<label>Deadline from<input id="df" type="date"></label>
-<label>Deadline to<input id="dt" type="date"></label>
-<label>Email<select id="email"><option value="">All</option><option value="yes">With email</option><option value="no">Without email</option></select></label>
+
+<div class="shell searchbar">
+  <div class="searchbox">
+    <span aria-hidden="true">⌕</span>
+    <input id="searchInput" type="search" placeholder="Search title, field, institution, country, keywords, hashtags…" autocomplete="off">
+    <button id="refreshBtn" type="button">↻ Refresh</button>
+  </div>
 </div>
-</section>
-<div class="sortbar"><div><b id="count">0</b> opportunities</div><div class="sortright"><label>Order by<select id="sort"><option value="remaining_asc">Urgent — fewest remaining days first</option><option value="deadline_asc">Deadline — soonest upcoming first</option><option value="remaining_desc">Remaining days — longest first</option><option value="deadline_desc">Deadline — latest first</option><option value="published_desc">Newest published</option><option value="title">Title A–Z</option></select></label><label>Per page<select id="size"><option>12</option><option>24</option><option>48</option></select></label><button id="refresh" class="btn" type="button">↻ Refresh sheet</button></div></div>
-<section id="grid" class="grid"></section><div id="empty" class="empty hidden">No opportunities match the current filters.</div>
-<div class="pager"><button id="prev" class="btn">← Previous</button><span id="pages">Page 1 of 1</span><button id="next" class="btn">Next →</button></div>
-<section class="social"><h2>📣 Scholar News — Contact us</h2><div class="links"><a href="https://scholarnews.github.io/" target="_blank">🌐 Website</a><a href="http://web.facebook.com/ScholarNewsSN" target="_blank">🔵 Facebook</a><a href="http://linkedin.com/in/scholarnews" target="_blank">💼 LinkedIn</a><a href="https://www.pinterest.com/scholar_news" target="_blank">📌 Pinterest</a></div><div class="notice">Google Sheet source: <a href="https://docs.google.com/spreadsheets/d/1nB7yeMp_j1Jpdl3E0oYgRKFcaZ7Ikxx6_at6s190PZg/edit?usp=sharing" target="_blank" rel="noopener">open the ScholarNews Sheet</a></div></section>
+
+<main class="shell main">
+  <section class="stats">
+    <div class="stat"><span>Opportunities</span><b id="statTotal">0</b></div>
+    <div class="stat"><span>Open / Active</span><b id="statOpen">0</b></div>
+    <div class="stat"><span>Countries</span><b id="statCountries">0</b></div>
+    <div class="stat"><span>Institutions</span><b id="statInstitutions">0</b></div>
+  </section>
+
+  <div class="layout">
+    <aside class="panel filters" aria-label="Opportunity filters">
+      <h2>Filters</h2>
+      <div class="small">Narrow the feed by the fields in your parser CSV.</div>
+      <div class="filter"><label>Opportunity type<select id="typeFilter"><option value="">All</option></select></label></div>
+      <div class="filter"><label>Country<select id="countryFilter"><option value="">All</option></select></label></div>
+      <div class="filter"><label>Hosting institution<select id="institutionFilter"><option value="">All</option></select></label></div>
+      <div class="filter"><label>Level<select id="levelFilter"><option value="">All</option></select></label></div>
+      <div class="filter"><label>Organization type<select id="orgFilter"><option value="">All</option></select></label></div>
+      <div class="filter"><label>Field / Discipline<select id="fieldFilter"><option value="">All</option></select></label></div>
+      <div class="filter"><label>Status<select id="statusFilter"><option value="">All</option><option value="open">Open / Active</option><option value="closed">Closed</option></select></label></div>
+      <div class="filter filter-row"><label>Published from<input id="publishedFrom" type="date"></label><label>Published to<input id="publishedTo" type="date"></label></div>
+      <div class="filter filter-row"><label>Deadline from<input id="deadlineFrom" type="date"></label><label>Deadline to<input id="deadlineTo" type="date"></label></div>
+      <div class="filter"><label>Email<select id="emailFilter"><option value="">All</option><option value="yes">With email</option><option value="no">Without email</option></select></label></div>
+      <button id="resetBtn" class="clear" type="button">Clear all filters</button>
+    </aside>
+
+    <section class="content">
+      <div class="content-head">
+        <div><div class="eyebrow">OPPORTUNITY FEED</div><h2><span id="resultCount">0</span> opportunities</h2></div>
+        <label class="sort-control">Order by
+          <select id="sortSelect">
+            <option value="remaining_asc">Urgent — fewest remaining days first</option>
+            <option value="deadline_asc">Deadline — soonest upcoming first</option>
+            <option value="remaining_desc">Remaining days — longest first</option>
+            <option value="deadline_desc">Deadline — latest first</option>
+            <option value="published_desc">Newest published</option>
+            <option value="title">Title A–Z</option>
+          </select>
+        </label>
+      </div>
+      <section id="resultsGrid" class="grid" aria-live="polite"></section>
+      <div id="emptyState" class="empty hidden">No opportunities match the current filters.</div>
+      <div class="pager"><button id="prevPage" class="btn" type="button">← Previous</button><span id="pageInfo">Page 1 of 1</span><button id="nextPage" class="btn" type="button">Next →</button></div>
+    </section>
+
+    <aside class="radar" aria-label="Deadline radar">
+      <div>
+        <div class="eyebrow">DEADLINE RADAR</div>
+        <h2>Closing soon</h2>
+        <div class="small">Open opportunities with the fewest days remaining.</div>
+        <div id="radarList" class="radar-list"></div>
+      </div>
+      <div class="trend">
+        <div class="eyebrow">TRENDING FIELDS</div>
+        <div id="trendList"></div>
+      </div>
+    </aside>
+  </div>
+
+  <section class="social">
+    <div class="eyebrow">SCHOLAR NEWS</div>
+    <h2>📣 Scholar News — Contact us</h2>
+    <div class="links">
+      <a href="https://scholarnews.github.io/" target="_blank" rel="noopener">🌐 Website</a>
+      <a href="http://web.facebook.com/ScholarNewsSN" target="_blank" rel="noopener">🔵 Facebook</a>
+      <a href="http://linkedin.com/in/scholarnews" target="_blank" rel="noopener">💼 LinkedIn</a>
+      <a href="https://www.pinterest.com/scholar_news" target="_blank" rel="noopener">📌 Pinterest</a>
+    </div>
+  </section>
 </main>
-<div id="modal" class="modal hidden"><div class="dialog"><button id="close" class="btn x">×</button><div id="bodyDetail"></div></div></div>
-<script>
-const GOOGLE_SHEET_ID="1nB7yeMp_j1Jpdl3E0oYgRKFcaZ7Ikxx6_at6s190PZg";
-const GOOGLE_SHEET_GID="";
-const LOCAL_CSV="./data/sciencecareers_opportunities_latest100.csv";
-const SHEET_URL="https://docs.google.com/spreadsheets/d/"+GOOGLE_SHEET_ID+(GOOGLE_SHEET_GID?"/gviz/tq?tqx=out:csv&gid="+GOOGLE_SHEET_GID:"/gviz/tq?tqx=out:csv");
-const SHEET_JSONP="https://docs.google.com/spreadsheets/d/"+GOOGLE_SHEET_ID+"/gviz/tq?tqx=out:json;responseHandler=scholarNewsSheetCallback"+(GOOGLE_SHEET_GID?"&gid="+GOOGLE_SHEET_GID:"");
-let rows=[],filtered=[],page=1,pageSize=12,sortMode="remaining_asc";
-const $=id=>document.getElementById(id),v=(r,k)=>String(r?.[k]??"").trim(),low=x=>String(x??"").toLowerCase().trim(),esc=x=>String(x??"").replace(/[&<>'"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[m])),iso=x=>{const m=String(x??"").match(/\d{4}-\d{2}-\d{2}/);return m?m[0]:""},split=x=>String(x??"").split(/[;,|]+/).map(s=>s.trim()).filter(Boolean),uniq=a=>[...new Set(a.filter(Boolean))].sort((a,b)=>a.localeCompare(b));
-function parseCSV(t){const out=[];let row=[],cell="",q=false;for(let i=0;i<t.length;i++){const c=t[i],n=t[i+1];if(q){if(c=='"'&&n=='"'){cell+='"';i++}else if(c=='"')q=false;else cell+=c}else{if(c=='"')q=true;else if(c===','){row.push(cell);cell=''}else if(c==='\n'){row.push(cell);out.push(row);row=[];cell=''}else if(c!=='\r')cell+=c}}row.push(cell);if(row.some(Boolean))out.push(row);const h=(out.shift()||[]).map(x=>x.replace(/^\uFEFF/,'').trim());return out.filter(r=>r.some(Boolean)).map(r=>Object.fromEntries(h.map((k,i)=>[k,r[i]??""])));}
-function googleRows(obj){const cols=(obj?.table?.cols||[]).map(c=>c.label||c.id||"");return (obj?.table?.rows||[]).map(rr=>Object.fromEntries(cols.map((k,i)=>[k,rr.c?.[i]?.f ?? rr.c?.[i]?.v ?? ""]))).filter(r=>Object.values(r).some(Boolean))}
-function jsonpLoad(){return new Promise((resolve,reject)=>{const cb="scholarNewsSheetCallback";let timer=setTimeout(()=>{cleanup();reject(new Error("Google Sheet JSONP timeout"))},15000);function cleanup(){clearTimeout(timer);delete window[cb];script.remove()}window[cb]=obj=>{cleanup();try{const d=googleRows(obj);if(!d.length)reject(new Error("Google Sheet returned no rows"));else resolve(d)}catch(e){reject(e)}};const script=document.createElement("script");script.src=SHEET_JSONP;script.onerror=()=>{cleanup();reject(new Error("Google Sheet JSONP request failed"))};document.head.appendChild(script)})}
-async function load(){ $('sourceStatus').textContent="Loading live Google Sheet…";try{try{const r=await fetch(SHEET_URL,{cache:"no-store"});if(r.ok){const d=parseCSV(await r.text());if(d.length){$('sourceStatus').textContent="● Live Google Sheet";return d}}}catch(e){}const d=await jsonpLoad();$('sourceStatus').textContent="● Live Google Sheet";return d}catch(e){try{const r=await fetch(LOCAL_CSV,{cache:"no-store"});if(!r.ok)throw new Error("Fallback CSV unavailable");const d=parseCSV(await r.text());$('sourceStatus').textContent="● Cached GitHub CSV fallback";return d}catch(e2){$('sourceStatus').textContent="● Data unavailable";throw new Error("Google Sheet could not be read and cached CSV fallback is unavailable.")}}}
-function rem(r){const m=v(r,"remaining").match(/-?\d+/);if(m)return +m[0];const d=iso(r.closing_date);if(!d)return null;const now=new Date();now.setHours(0,0,0,0);return Math.ceil((new Date(d+"T00:00:00")-now)/86400000)}
-function isOpen(r){const n=rem(r);return n===null||n>=0}
-function fmtDate(x){const d=iso(x);if(!d)return v({x},"x");const p=d.split("-");return p[2]+" "+new Date(+p[0],+p[1]-1,1).toLocaleString(undefined,{month:"short"})+" "+p[0]}
-function opts(id,vals){const s=$(id),cur=s.value;s.innerHTML='<option value="">All</option>'+uniq(vals).map(x=>'<option>'+esc(x)+'</option>').join("");s.value=cur}
-function setup(){opts("type",rows.map(r=>v(r,"opportunity_type")||v(r,"type_display")));opts("country",rows.map(r=>v(r,"hosting_country")||v(r,"location")));opts("inst",rows.map(r=>v(r,"hosting_institution")));opts("level",rows.map(r=>v(r,"level")));opts("org",rows.map(r=>v(r,"organization_type")));opts("field",rows.flatMap(r=>split(v(r,"discipline"))));}
-function order(a,b){const ar=rem(a),br=rem(b),ao=isOpen(a),bo=isOpen(b),ad=iso(a.closing_date)||"9999-99-99",bd=iso(b.closing_date)||"9999-99-99";if(sortMode==="title")return v(a,"title").localeCompare(v(b,"title"));if(ao!==bo)return ao?-1:1;if(sortMode==="remaining_asc")return(ar??999999)-(br??999999);if(sortMode==="remaining_desc")return(br??-999999)-(ar??-999999);if(sortMode==="deadline_asc")return ad.localeCompare(bd)||(ar??999999)-(br??999999);if(sortMode==="deadline_desc")return bd.localeCompare(ad);return(iso(b.published_date)||"").localeCompare(iso(a.published_date)||"")}
-function apply(){const q=low($("search").value),f=[low($("type").value),low($("country").value),low($("inst").value),low($("level").value),low($("org").value),low($("field").value)];filtered=rows.filter(r=>{const c=[v(r,"opportunity_type")||v(r,"type_display"),v(r,"hosting_country")||v(r,"location"),v(r,"hosting_institution"),v(r,"level"),v(r,"organization_type"),v(r,"discipline")];if(q&&!Object.values(r).join(" ").toLowerCase().includes(q))return false;for(let i=0;i<f.length;i++){if(!f[i])continue;if(i===5&&!split(c[i]).some(x=>low(x)===f[i]))return false;if(i!==5&&low(c[i])!==f[i])return false}const st=$("status").value;if(st==="open"&&!isOpen(r))return false;if(st==="closed"&&isOpen(r))return false;if($("pf").value&&iso(r.published_date)<$("pf").value)return false;if($("pt").value&&iso(r.published_date)>$("pt").value)return false;if($("df").value&&iso(r.closing_date)<$("df").value)return false;if($("dt").value&&iso(r.closing_date)>$("dt").value)return false;const em=v(r,"emails");if($("email").value==="yes"&&!em)return false;if($("email").value==="no"&&em)return false;return true});filtered.sort(order);page=1;render()}
-function card(r,i){const n=rem(r),o=isOpen(r);return '<article class="card"><h3>'+esc(v(r,"title")||"Untitled opportunity")+'</h3><div class="muted">'+esc(v(r,"hosting_institution"))+' · '+esc(v(r,"location"))+' '+esc(v(r,"flag_emoji"))+'</div><div class="badges"><span class="badge">💎 '+esc(v(r,"job_type")||v(r,"opportunity_type"))+'</span><span class="badge">🎓 '+esc(v(r,"level"))+'</span><span class="badge '+(o?"open":"closed")+'">'+(o?"● Open / Active":"● Closed")+'</span>'+(o&&n!==null&&n<=14?'<span class="badge urgent">🔥 '+n+" days left</span>":"")+'</div><div class="meta"><div>📍 <b>Field:</b> '+esc(v(r,"discipline"))+'</div><div>💼 <b>Status | Duration | Contract:</b> '+esc([v(r,"position_type"),v(r,"work_mode"),v(r,"duration"),v(r,"contract")].filter(Boolean).join(" | "))+'</div><div>💰 <b>Coverage:</b> '+esc(v(r,"coverage"))+'</div><div>📅 <b>Deadline:</b> '+esc(fmtDate(v(r,"closing_date")))+' · '+esc(n===null?"":n+" days")+'</div><div>📌 <b>Eligibility:</b> '+esc(v(r,"eligibility"))+'</div></div><div class="tags">'+split(v(r,"viral_hashtags")).map(x=>'<span class="tag">'+esc(x)+"</span>").join("")+'</div><div class="actions"><button class="btn" data-i="'+i+'">View details</button>'+(v(r,"application_url")||v(r,"source_url")?'<a class="btn primary" target="_blank" rel="noopener" href="'+esc(v(r,"application_url")||v(r,"source_url"))+'">Open opportunity ↗</a>':"")+'</div></article>'}
-function render(){const s=(page-1)*pageSize,it=filtered.slice(s,s+pageSize);$("grid").innerHTML=it.map((r,i)=>card(r,s+i)).join("");$("count").textContent=filtered.length;$("empty").classList.toggle("hidden",!!filtered.length);const pages=Math.max(1,Math.ceil(filtered.length/pageSize));$("pages").textContent="Page "+page+" of "+pages;$("prev").disabled=page<=1;$("next").disabled=page>=pages}
-function detail(r){const p=[["💎 Type",v(r,"type_display")||v(r,"job_type")],["🎓 Level",v(r,"level")],["📍 Field",v(r,"discipline")],["💼 Status | Duration | Contract",[v(r,"position_type"),v(r,"work_mode"),v(r,"duration"),v(r,"contract")].filter(Boolean).join(" | ")],["💰 Coverage",v(r,"coverage")],["🏛️ Hosting institution",v(r,"hosting_institution")],["🏦 Organization Type",v(r,"organization_type")],["🌍 Hosting Country",v(r,"location")+" "+v(r,"flag_emoji")],["📌 Eligibility",v(r,"eligibility")],["📅 Deadline",fmtDate(v(r,"closing_date"))],["⌛ Remaining",v(r,"remaining")||""],["📨 Email",v(r,"emails")],["🔥 Hook 1",v(r,"hook_1")],["🔥 Hook 2",v(r,"hook_2")],["🔥 Hook 3",v(r,"hook_3")],["🔑 Viral Keywords",v(r,"viral_keywords")],["🏷️ Hashtags",v(r,"viral_hashtags")]];$("bodyDetail").innerHTML="<h2>"+esc(v(r,"title"))+"</h2><div class=detailgrid>"+p.filter(x=>x[1]).map(x=>"<div><small>"+esc(x[0])+"</small>"+esc(x[1])+"</div>").join("")+"</div><p><a class='btn primary' target='_blank' rel='noopener' href='"+esc(v(r,"application_url")||v(r,"source_url"))+"'>Open opportunity ↗</a></p>";$("modal").classList.remove("hidden")}
-async function refresh(){rows=await load();$("total").textContent=rows.length;$("open").textContent=rows.filter(isOpen).length;$("countries").textContent=uniq(rows.map(r=>v(r,"hosting_country")||v(r,"location"))).length;$("institutions").textContent=uniq(rows.map(r=>v(r,"hosting_institution"))).length;$("updated").textContent="Loaded "+rows.length+" record(s) directly from the configured data source.";setup();apply()}
-document.querySelectorAll(".filters select,.filters input").forEach(e=>e.addEventListener("change",apply));$("search").addEventListener("input",apply);$("sort").addEventListener("change",e=>{sortMode=e.target.value;apply()});$("size").addEventListener("change",e=>{pageSize=+e.target.value||12;page=1;render()});$("prev").onclick=()=>{if(page>1){page--;render()}};$("next").onclick=()=>{if(page<Math.ceil(filtered.length/pageSize)){page++;render()}};$("reset").onclick=()=>{document.querySelectorAll(".filters input").forEach(e=>e.value="");document.querySelectorAll(".filters select").forEach(e=>e.value="");$("search").value="";$("sort").value="remaining_asc";sortMode="remaining_asc";apply()};$("grid").onclick=e=>{const b=e.target.closest("[data-i]");if(b)detail(filtered[+b.dataset.i])};$("close").onclick=()=>$("modal").classList.add("hidden");$("modal").onclick=e=>{if(e.target.id==="modal")$("modal").classList.add("hidden")};$("refresh").onclick=()=>refresh().catch(e=>alert(e.message));$("theme").onclick=()=>{const d=document.documentElement.dataset.theme==="dark";document.documentElement.dataset.theme=d?"":"dark"};window.addEventListener("load",()=>refresh().catch(e=>{$("sourceStatus").textContent="● Data unavailable";$("grid").innerHTML='<div class="empty">'+esc(e.message)+'</div>'}));
-</script>
+
+<div id="modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+  <div class="dialog">
+    <button id="modalClose" class="btn close" type="button">×</button>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
+<script src="./app.js"></script>
 </body>
 </html>
