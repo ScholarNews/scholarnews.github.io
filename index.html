@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="description" content="ScholarNews — jobs, postdocs, fellowships, scholarships, internships, awards, conferences and training opportunities.">
+<meta name="description" content="ScholarNews — academic and science opportunities">
 <meta name="theme-color" content="#174ab4">
 <title>ScholarNews — Opportunities</title>
 <link rel="stylesheet" href="./styles.css">
@@ -12,7 +12,7 @@
 <header class="site-header">
   <div class="shell topbar">
     <a class="brand" href="./">ScholarNews</a>
-    <span class="muted">Science &amp; Technology Opportunities</span>
+    <span class="brand-tag">Science &amp; Technology Opportunities</span>
     <nav class="nav" aria-label="Opportunity categories">
       <button class="chip active" type="button" data-nav="All">All</button>
       <button class="chip" type="button" data-nav="Jobs">Jobs</button>
@@ -29,12 +29,12 @@
     <div>
       <div class="eyebrow">SCHOLAR NEWS</div>
       <h1>Find your next academic opportunity.</h1>
-      <p>Discover jobs, postdocs, fellowships, scholarships, internships, awards, conferences and training programs from one searchable source.</p>
+      <p>Search and filter jobs, postdocs, fellowships, scholarships, internships, awards, conferences and training programs.</p>
     </div>
     <div class="hero-side">
       <div class="live">
         <div class="live-row"><span>Data source</span><strong id="sourceStatus">Loading…</strong></div>
-        <div class="live-row"><span>Last refresh</span><strong id="updated">—</strong></div>
+        <div class="live-row"><span>Last refresh</span><strong id="updated">Starting…</strong></div>
         <div class="live-row"><span>Urgent deadlines</span><strong id="statUrgent">0</strong></div>
       </div>
     </div>
@@ -59,8 +59,10 @@
 
   <div class="layout">
     <aside class="panel filters" aria-label="Opportunity filters">
-      <h2>Filters</h2>
-      <div class="small">Narrow the feed by the fields in your parser CSV.</div>
+      <div class="filter-heading">
+        <div><div class="eyebrow">REFINE</div><h2>Filters</h2></div>
+        <span class="small">Live</span>
+      </div>
       <div class="filter"><label>Opportunity type<select id="typeFilter"><option value="">All</option></select></label></div>
       <div class="filter"><label>Country<select id="countryFilter"><option value="">All</option></select></label></div>
       <div class="filter"><label>Hosting institution<select id="institutionFilter"><option value="">All</option></select></label></div>
@@ -68,13 +70,27 @@
       <div class="filter"><label>Organization type<select id="orgFilter"><option value="">All</option></select></label></div>
       <div class="filter"><label>Field / Discipline<select id="fieldFilter"><option value="">All</option></select></label></div>
       <div class="filter"><label>Status<select id="statusFilter"><option value="">All</option><option value="open">Open / Active</option><option value="closed">Closed</option></select></label></div>
-      <div class="filter filter-row"><label>Published from<input id="publishedFrom" type="date"></label><label>Published to<input id="publishedTo" type="date"></label></div>
-      <div class="filter filter-row"><label>Deadline from<input id="deadlineFrom" type="date"></label><label>Deadline to<input id="deadlineTo" type="date"></label></div>
+      <div class="filter"><label>Published from<input id="publishedFrom" type="date"></label></div>
+      <div class="filter"><label>Published to<input id="publishedTo" type="date"></label></div>
+      <div class="filter"><label>Deadline from<input id="deadlineFrom" type="date"></label></div>
+      <div class="filter"><label>Deadline to<input id="deadlineTo" type="date"></label></div>
       <div class="filter"><label>Email<select id="emailFilter"><option value="">All</option><option value="yes">With email</option><option value="no">Without email</option></select></label></div>
       <button id="resetBtn" class="clear" type="button">Clear all filters</button>
     </aside>
 
     <section class="content">
+      <section id="detailPanel" class="panel detail-panel hidden" aria-live="polite">
+        <div class="detail-top">
+          <div>
+            <div class="eyebrow">OPPORTUNITY DETAILS</div>
+            <h2 id="detailTitle">Select an opportunity</h2>
+            <p id="detailSub" class="sub"></p>
+          </div>
+          <button id="detailClose" class="btn" type="button">Close</button>
+        </div>
+        <div id="detailBody"></div>
+      </section>
+
       <div class="content-head">
         <div><div class="eyebrow">OPPORTUNITY FEED</div><h2><span id="resultCount">0</span> opportunities</h2></div>
         <label class="sort-control">Order by
@@ -88,16 +104,21 @@
           </select>
         </label>
       </div>
+
       <section id="resultsGrid" class="grid" aria-live="polite"></section>
       <div id="emptyState" class="empty hidden">No opportunities match the current filters.</div>
-      <div class="pager"><button id="prevPage" class="btn" type="button">← Previous</button><span id="pageInfo">Page 1 of 1</span><button id="nextPage" class="btn" type="button">Next →</button></div>
+      <div class="pager">
+        <button id="prevPage" class="btn" type="button">← Previous</button>
+        <span id="pageInfo">Page 1 of 1</span>
+        <button id="nextPage" class="btn" type="button">Next →</button>
+      </div>
     </section>
 
     <aside class="radar" aria-label="Deadline radar">
       <div>
         <div class="eyebrow">DEADLINE RADAR</div>
         <h2>Closing soon</h2>
-        <div class="small">Open opportunities with the fewest days remaining.</div>
+        <div class="small">Click an item to open its details in the center panel.</div>
         <div id="radarList" class="radar-list"></div>
       </div>
       <div class="trend">
@@ -118,14 +139,6 @@
     </div>
   </section>
 </main>
-
-<div id="modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-  <div class="dialog">
-    <button id="modalClose" class="btn close" type="button">×</button>
-    <div id="modalBody"></div>
-  </div>
-</div>
-
 <script src="./app.js"></script>
 </body>
 </html>
