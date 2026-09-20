@@ -25,7 +25,7 @@
 <div class="filter"><label>Level<select id="level"><option value="">All</option></select></label></div>
 <div class="filter"><label>Organization type<select id="org"><option value="">All</option></select></label></div>
 <div class="filter"><label>Field / Discipline<select id="field"><option value="">All</option></select></label></div>
-<div class="filter"><label>Status<select id="status"><option value="">All</option><option value="open">Open / Active</option><option value="closed">❌</option></select></label></div>
+<div class="filter"><label>Status<select id="status"><option value="">All</option><option value="open">Open / Active</option><option value="closed">Closed</option></select></label></div>
 <div class="filter"><label>Published from<input id="pf" type="date"></label></div>
 <div class="filter"><label>Published to<input id="pt" type="date"></label></div>
 <div class="filter"><label>Deadline from<input id="df" type="date"></label></div>
@@ -93,7 +93,7 @@ function boot(){
     const b=e.target.closest("[data-radar]");
     if(b) showDetail(state.rows[+b.dataset.radar]);
   });
-  const closeEl=$("detailClose"); if(closeEl) closeEl.addEventListener("click",()=>$( "detail").classList.add("hidden"));
+  const closeEl=$("detail❌"); if(closeEl) closeEl.addEventListener("click",()=>$( "detail").classList.add("hidden"));
   const themeEl=$("theme"); if(themeEl) themeEl.addEventListener("click",()=>{
     const dark=document.documentElement.dataset.theme==="dark";
     document.documentElement.dataset.theme=dark?"":"dark";
