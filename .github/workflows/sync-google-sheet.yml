@@ -1,5 +1,9 @@
 name: Sync Google Sheet Data
-# Reads the configured public Google Sheet and publishes a static site snapshot.
+# Reads the configured public Google Sheet, publishes a static data snapshot,
+# and deploys that same snapshot to GitHub Pages in the same workflow.
+#
+# This is intentional: a commit made by GITHUB_TOKEN does not trigger another
+# GitHub Actions workflow, so Pages deployment must happen here.
 
 on:
   push:
@@ -14,14 +18,20 @@ on:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
 
 concurrency:
-  group: scholarnews-google-sheet-sync
+  group: scholarnews-site-sync
   cancel-in-progress: false
 
 jobs:
-  sync:
+  sync-and-deploy:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
     steps:
       - name: Checkout latest repository
         uses: actions/checkout@v4
@@ -33,6 +43,7 @@ jobs:
         run: python3 scripts/sync_google_sheet.py
 
       - name: Commit synced data
+        id: commit
         shell: bash
         run: |
           set -euo pipefail
@@ -43,14 +54,22 @@ jobs:
           git add data/google_sheet_latest.csv data/opportunities.json data/last_sync.json
 
           if git diff --cached --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "No Google Sheet data changes."
             exit 0
           fi
 
           git commit -m "chore: sync Google Sheet data"
+          echo "changed=true" >> "$GITHUB_OUTPUT"
 
-          # The website repo can receive commits while this job is running.
-          # Rebase our generated data commit onto the newest main before pushing.
+      - name: Push synced data safely
+        if: steps.commit.outputs.changed == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # Another job or a manual edit can move main while this job runs.
+          # Rebase onto the newest main immediately before pushing.
           for attempt in 1 2 3 4 5; do
             echo "Push attempt $attempt/5"
             git fetch origin main
@@ -62,13 +81,29 @@ jobs:
             fi
 
             if git push origin HEAD:main; then
-              echo "Google Sheet sync pushed successfully."
+              echo "Google Sheet data pushed successfully."
               exit 0
             fi
 
-            echo "Push rejected because main moved. Fetching again and retrying..."
+            echo "Push rejected because main moved. Retrying..."
             sleep 2
           done
 
           echo "Failed to push after 5 attempts."
           exit 1
+
+      # IMPORTANT:
+      # Deploy in THIS workflow so the GITHUB_TOKEN commit does not need to
+      # trigger a second workflow. The artifact is the exact working tree
+      # produced by the successful Google Sheet synchronization.
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: .
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
