@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="ScholarNews — science and technology opportunities">
+<title>ScholarNews Dashboard</title>
+<link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+<header class="site-header">
+  <div class="shell topbar">
+    <a class="brand" href="./">ScholarNews</a>
+    <span class="brand-sub">Science &amp; Technology Opportunities</span>
+    <button id="themeToggle" class="icon-btn" type="button" aria-label="Toggle theme">☾</button>
+  </div>
+  <div class="shell hero">
+    <div>
+      <span class="eyebrow">SCHOLAR NEWS</span>
+      <h1>Find your next opportunity.</h1>
+      <p>Jobs, postdocs, fellowships, scholarships, internships, awards, conferences and training opportunities.</p>
+    </div>
+    <div id="dataUpdated" class="hero-meta">Loading data…</div>
+  </div>
+</header>
+<main class="shell main">
+  <section class="stats">
+    <div class="stat"><span>Opportunities</span><strong id="statTotal">—</strong></div>
+    <div class="stat"><span>Open / Active</span><strong id="statOpen">—</strong></div>
+    <div class="stat"><span>Countries</span><strong id="statCountries">—</strong></div>
+    <div class="stat"><span>Institutions</span><strong id="statInstitutions">—</strong></div>
+  </section>
+  <section class="panel filters optimizer-panel" aria-labelledby="filtersHeading">
+    <div class="panel-heading"><div><span class="panel-kicker">DISCOVER</span><h2 id="filtersHeading">Optimizers &amp; Filters</h2></div><span class="panel-note">All filters stay inside this panel</span></div>
+    <div class="search-row"><label class="search" for="searchInput"><span aria-hidden="true">🔎</span><input id="searchInput" type="search" placeholder="Search title, field, institution, country, keywords…" autocomplete="off"></label><button id="resetFilters" class="btn" type="button">Reset</button></div>
+    <div class="filter-grid" id="filterGrid">
+      <label>Opportunity type<select id="opportunityTypeFilter"><option value="">All</option></select></label>
+      <label>Country<select id="countryFilter"><option value="">All</option></select></label>
+      <label>Hosting institution<select id="institutionFilter"><option value="">All</option></select></label>
+      <label>Level<select id="levelFilter"><option value="">All</option></select></label>
+      <label>Organization type<select id="orgTypeFilter"><option value="">All</option></select></label>
+      <label>Field / Discipline<select id="disciplineFilter"><option value="">All</option></select></label>
+      <label>Status<select id="statusFilter"><option value="">All</option><option value="open">Open / Active</option><option value="closed">Closed</option></select></label>
+      <label>Published from<input id="publishedFrom" type="date"></label>
+      <label>Published to<input id="publishedTo" type="date"></label>
+      <label>Deadline from<input id="deadlineFrom" type="date"></label>
+      <label>Deadline to<input id="deadlineTo" type="date"></label>
+      <label class="urgency-toggle"><span>Deadline urgency</span><span class="hint">Use sorting below for fewest days first</span></label>
+    </div>
+    <label class="check"><input id="withEmailOnly" type="checkbox"> Only opportunities with email</label>
+  </section>
+  <section class="toolbar" aria-label="Sort and page controls">
+    <div><strong id="resultCount">0</strong> opportunities</div>
+    <div class="toolbar-right">
+      <label>Order by<select id="sortSelect"><option value="remaining_asc">Urgent — fewest remaining days first</option><option value="deadline_asc">Deadline — soonest upcoming first</option><option value="remaining_desc">Remaining days — longest first</option><option value="deadline_desc">Deadline — latest upcoming first</option><option value="published_desc">Newest published</option><option value="title_asc">Title A–Z</option></select></label>
+      <label>Per page<select id="pageSize"><option>12</option><option>24</option><option>48</option></select></label>
+    </div>
+  </section>
+  <section id="resultsGrid" class="grid" aria-live="polite"></section>
+  <section id="emptyState" class="empty hidden">No opportunities match the current filters.</section>
+  <nav class="pager"><button id="prevPage" class="btn" type="button">← Previous</button><span id="pageInfo">Page 1 of 1</span><button id="nextPage" class="btn" type="button">Next →</button></nav>
+  <section class="social-box"><h2>📣 Scholar News — Contact us</h2><div class="contact-links"><a href="https://scholarnews.github.io/" target="_blank" rel="noopener">🌐 Website</a><a href="http://web.facebook.com/ScholarNewsSN" target="_blank" rel="noopener">🔵 Facebook</a><a href="http://linkedin.com/in/scholarnews" target="_blank" rel="noopener">💼 LinkedIn</a><a href="https://www.pinterest.com/scholar_news" target="_blank" rel="noopener">📌 Pinterest</a></div></section>
+</main>
+<div id="modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><div class="modal-card"><button id="modalClose" class="modal-close" type="button">×</button><div id="modalBody"></div></div></div>
+<script src="./data/opportunities.js"></script>
+<script src="./app.js"></script>
+</body>
+</html>
