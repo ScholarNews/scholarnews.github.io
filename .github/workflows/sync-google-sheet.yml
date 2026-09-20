@@ -1,4 +1,5 @@
 name: Sync Google Sheet Data
+# Reads the configured public Google Sheet and publishes a static site snapshot.
 
 on:
   push:
