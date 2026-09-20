@@ -4,6 +4,6 @@
   "sheet_id": "1nB7yeMp_j1Jpdl3E0oYgRKFcaZ7Ikxx6_at6s190PZg",
   "sheet_url": "https://docs.google.com/spreadsheets/d/1nB7yeMp_j1Jpdl3E0oYgRKFcaZ7Ikxx6_at6s190PZg/edit?usp=sharing",
   "synced_at_utc": null,
-  "row_count": 0,
-  "note": "Initial GitHub snapshot. The sync workflow replaces this with the live Google Sheet data when the sheet is publicly readable."
+  "row_count": 1,
+  "note": "Initial GitHub parser snapshot. The sync workflow replaces this with live Google Sheet data when the sheet is publicly readable."
 }
