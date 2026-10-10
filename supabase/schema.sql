@@ -39,6 +39,10 @@ alter table public.applications enable row level security;
 alter table public.drafts enable row level security;
 alter table public.cv_files enable row level security;
 
+-- The browser client receives only these table privileges; RLS below limits each row to its owner.
+revoke all on table public.profiles, public.applications, public.drafts, public.cv_files from anon;
+grant select, insert, update, delete on table public.profiles, public.applications, public.drafts, public.cv_files to authenticated;
+
 drop policy if exists "Users manage own Scholar News profile" on public.profiles;
 create policy "Users manage own Scholar News profile" on public.profiles for all to authenticated
  using((select auth.uid())=user_id) with check((select auth.uid())=user_id);
