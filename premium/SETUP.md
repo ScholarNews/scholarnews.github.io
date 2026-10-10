@@ -40,7 +40,7 @@ If your Cloudflare hostname is different, use the exact hostname you test. Add a
 4. Sign in with a second test account and verify it cannot see the first account’s profile, CV files, drafts or applications.
 5. Repeat on the Cloudflare hostname if students will use it.
 
-Do not upload sensitive documents until you have tested account ownership and access rules. Use SMTP for reliable production email; provider default email sending may be rate-limited.
+Do not upload sensitive documents until you have tested account ownership and access rules. The default email sender is deliberately rate-limited and is not suitable for repeated production sign-up/reset emails. If you see “email rate limit exceeded”, stop retrying and wait for the limit to reset. For reliable delivery, configure a trusted custom SMTP provider in Supabase Authentication settings and verify its sender/domain. Ensure the Site URL and Redirect URLs above include the exact `/premium/` URL used by students.
 
 ## Included
 
