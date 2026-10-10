@@ -92,6 +92,43 @@
   }
   function initials(name) { return String(name || "SN").split(/\s+/).filter(Boolean).slice(0, 2).map(s => s[0].toUpperCase()).join("") || "SN"; }
   function savedKey(row) { return "sn-save-" + (v(row, "job_id") || v(row, "source_url") || titleOf(row)); }
+  function sanitizeSummaryHTML(raw) {
+    // Descriptions come from the opportunity feed. Keep basic rich-text tags only;
+    // never copy arbitrary attributes such as onclick, style, or event handlers.
+    const allowedTags = new Set(["P", "STRONG", "B", "EM", "I", "U", "BR", "UL", "OL", "LI", "A", "H2", "H3", "H4", "H5", "H6", "BLOCKQUOTE", "HR", "DIV", "SPAN"]);
+    const droppedTags = new Set(["SCRIPT", "STYLE", "IFRAME", "OBJECT", "EMBED", "SVG", "MATH", "TEMPLATE", "FORM", "INPUT", "BUTTON", "VIDEO", "AUDIO"]);
+    const parsed = new DOMParser().parseFromString(String(raw ?? ""), "text/html");
+    const output = document.createElement("div");
+    function clean(node) {
+      if (node.nodeType === Node.TEXT_NODE) return document.createTextNode(node.nodeValue || "");
+      if (node.nodeType !== Node.ELEMENT_NODE) return document.createDocumentFragment();
+      const tag = node.tagName.toUpperCase();
+      if (droppedTags.has(tag)) return document.createDocumentFragment();
+      if (!allowedTags.has(tag)) {
+        const fragment = document.createDocumentFragment();
+        for (const child of node.childNodes) fragment.appendChild(clean(child));
+        return fragment;
+      }
+      const safe = document.createElement(tag.toLowerCase());
+      if (tag === "A") {
+        const href = node.getAttribute("href") || "";
+        try {
+          const url = new URL(href, location.href);
+          if (["http:", "https:", "mailto:"].includes(url.protocol)) {
+            safe.setAttribute("href", url.href);
+            if (url.protocol !== "mailto:") {
+              safe.setAttribute("target", "_blank");
+              safe.setAttribute("rel", "noopener noreferrer");
+            }
+          }
+        } catch { /* Invalid links are rendered as plain link text. */ }
+      }
+      for (const child of node.childNodes) safe.appendChild(clean(child));
+      return safe;
+    }
+    for (const child of parsed.body.childNodes) output.appendChild(clean(child));
+    return output.innerHTML;
+  }
   function isSaved(row) { return storage.get(savedKey(row)) === "1"; }
 
   function fillSelect(id, values, defaultLabel) {
@@ -235,7 +272,8 @@
     ].filter(pair => pair[1]);
     $("detailTitle").textContent = titleOf(row);
     $("detailSub").textContent = [institutionOf(row), locationOf(row)].filter(Boolean).join(" · ");
-    $("detailBody").innerHTML = '<div class="detail-grid">' + fields.map(([label, value]) => '<div class="detail-item"><small>' + esc(label) + '</small><div>' + esc(value) + '</div></div>').join("") + '</div>' + (v(row, "description") || v(row, "job_description") ? '<div class="detail-description">' + esc(v(row, "description") || v(row, "job_description").slice(0, 5000)) + '</div>' : '') + '<div class="detail-actions">' + (sourceOf(row) ? '<a class="apply-button" href="' + esc(sourceOf(row)) + '" target="_blank" rel="noopener">Open official listing <span aria-hidden="true">↗</span></a>' : '') + '<button class="copy-button" id="copyDetails" type="button">Copy details</button></div>';
+    const summary = v(row, "description") || v(row, "job_description") || v(row, "summary");
+    $("detailBody").innerHTML = '<div class="detail-grid">' + fields.map(([label, value]) => '<div class="detail-item"><small>' + esc(label) + '</small><div>' + esc(value) + '</div></div>').join("") + '</div>' + (summary ? '<section class="detail-summary"><h3>Summary</h3><div class="detail-description rich-summary">' + sanitizeSummaryHTML(summary) + '</div></section>' : '') + '<div class="detail-actions">' + (sourceOf(row) ? '<a class="apply-button" href="' + esc(sourceOf(row)) + '" target="_blank" rel="noopener">Open official listing <span aria-hidden="true">↗</span></a>' : '') + '<button class="copy-button" id="copyDetails" type="button">Copy details</button></div>';
     $("detailPanel").classList.remove("hidden"); document.body.style.overflow = "hidden";
     $("detailClose").focus();
     $("copyDetails").onclick = () => { const text = [titleOf(row), ...fields.map(([label, value]) => label + ": " + value), sourceOf(row) ? "Official listing: " + sourceOf(row) : ""].filter(Boolean).join("\n"); copyText(text); };
