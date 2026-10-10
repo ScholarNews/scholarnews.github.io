@@ -207,7 +207,7 @@
       '<div class="card-badges">' + (type ? '<span class="badge badge-category">' + esc(type) + '</span>' : '') + (level ? '<span class="badge">' + esc(level) + '</span>' : '') + '<span class="badge ' + (open ? "badge-open" : "badge-closed") + '">' + (open ? "● Open / active" : "● Deadline passed") + '</span>' + (urgent ? '<span class="badge badge-urgent">' + (days === 0 ? "Closes today" : days + " days left") + '</span>' : '') + '</div>' +
       '<div class="card-meta"><div class="card-meta-item"><span class="card-meta-label">CLOSING DATE</span><span class="card-meta-value">' + esc(deadlineText) + '</span></div><div class="card-meta-item"><span class="card-meta-label">FUNDING / COVERAGE</span><span class="card-meta-value">' + esc(v(row, "coverage") || "See official listing") + '</span></div><div class="card-meta-item"><span class="card-meta-label">FIELD</span><span class="card-meta-value">' + esc(fields.join(", ") || "Not specified") + '</span></div><div class="card-meta-item"><span class="card-meta-label">FORMAT</span><span class="card-meta-value">' + esc(duration || "See official listing") + '</span></div></div>' +
       '<div class="card-tags">' + split(v(row, "viral_hashtags")).slice(0, 3).map(tag => '<span class="tag">' + esc(tag) + '</span>').join("") + '</div>' +
-      '<div class="card-footer"><button type="button" class="details-button" data-index="' + index + '">View details <span aria-hidden="true">→</span></button>' + (source ? '<a class="apply-button" href="' + esc(source) + '" target="_blank" rel="noopener">View listing <span aria-hidden="true">↗</span></a>' : '') + '</div></article>';
+      '<div class="card-footer card-footer-premium"><button type="button" class="details-button" data-index="' + index + '">View details <span aria-hidden="true">→</span></button><button type="button" class="quick-apply-button" data-quick-apply-index="' + index + '">Apply with Scholar News <span aria-hidden="true">↗</span></button>' + (source ? '<a class="apply-button" href="' + esc(source) + '" target="_blank" rel="noopener">Official listing <span aria-hidden="true">↗</span></a>' : '') + '</div></article>';
   }
   function renderRadar() {
     const items = state.rows.filter(row => isOpen(row) && remaining(row) !== null).sort((a, b) => remaining(a) - remaining(b)).slice(0, 6);
@@ -278,6 +278,11 @@
     $("detailClose").focus();
     $("copyDetails").onclick = () => { const text = [titleOf(row), ...fields.map(([label, value]) => label + ": " + value), sourceOf(row) ? "Official listing: " + sourceOf(row) : ""].filter(Boolean).join("\n"); copyText(text); };
   }
+  function openPremium(tool, row) {
+    try { sessionStorage.setItem("sn-selected-opportunity-v1", JSON.stringify(row || {})); } catch {}
+    window.location.href = new URL("./premium/?tool=" + encodeURIComponent(tool || "cover"), document.baseURI).href;
+  }
+  window.startScholarNewsApplication = openPremium;
   function closeDetails() { $("detailPanel").classList.add("hidden"); document.body.style.overflow = ""; }
   async function copyText(text) { try { await navigator.clipboard.writeText(text); toast("Opportunity details copied"); } catch { const input = document.createElement("textarea"); input.value = text; document.body.appendChild(input); input.select(); try { document.execCommand("copy"); toast("Opportunity details copied"); } catch { toast("Copy is not available in this browser", true); } input.remove(); } }
   function toast(message, error) { const el = document.createElement("div"); el.className = "toast" + (error ? " error" : ""); el.textContent = message; $("toastRegion").appendChild(el); setTimeout(() => el.remove(), 3000); }
@@ -296,8 +301,11 @@
     $("nextPage").addEventListener("click", () => { if (state.page < Math.ceil(state.filtered.length / state.pageSize)) { state.page++; render(); } });
     $("resetBtn").addEventListener("click", resetFilters); $("emptyResetBtn").addEventListener("click", resetFilters);
     $("detailClose").addEventListener("click", closeDetails); $("detailPanel").addEventListener("click", event => { if (event.target === $("detailPanel")) closeDetails(); });
+    $("detailBody").addEventListener("click", event => { const action = event.target.closest("[data-detail-apply-tool]"); if (action) openPremium(action.dataset.detailApplyTool, window.scholarNewsSelectedOpportunity); });
     document.addEventListener("keydown", event => { if (event.key === "Escape") closeDetails(); });
     $("resultsGrid").addEventListener("click", event => {
+      const quickApply = event.target.closest("[data-quick-apply-index]");
+      if (quickApply) { openPremium("cover", state.filtered[Number(quickApply.dataset.quickApplyIndex)]); return; }
       const save = event.target.closest("[data-save-index]");
       const detail = event.target.closest("[data-index]");
       if (save) { const row = state.filtered[Number(save.dataset.saveIndex)]; storage.set(savedKey(row), isSaved(row) ? "0" : "1"); render(); toast(isSaved(row) ? "Removed from saved listings" : "Saved for later"); return; }
