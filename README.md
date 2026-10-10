@@ -57,7 +57,7 @@ The page includes email/password authentication, profile/CV information, private
 - `premium/config.js` — public Supabase configuration placeholder; blank until set up.
 - `supabase/schema.sql` — private tables, row-level security policies and private CV bucket.
 - `premium/SETUP.md` — Supabase setup, redirect configuration and verification checklist.
-- `premium-v20261010-1937.js/css` — homepage opportunity feed, quick-apply actions and site styling.
+- `premium-v20261010-applicationdesk.js/css` — cache-busted homepage opportunity feed, quick-apply actions and site styling.
 - `index.html` — main opportunity finder; the embedded application workspace has been removed.
 
 Templates and eligibility extraction are not AI-powered in this release. The tracker records progress on Scholar News; it does not submit applications to external institutions or send automatic email/push reminders. Drafts, CV text and applications are saved to Supabase only after the owner configures the project and signs in. The homepage’s locally saved opportunity feature remains device/browser-specific.
