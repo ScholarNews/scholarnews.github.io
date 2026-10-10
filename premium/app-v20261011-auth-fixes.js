@@ -17,12 +17,12 @@ function decodeHTMLEntities(value){const node=document.createElement("textarea")
 function cleanOfficialText(value){
  let text=String(value==null?"":value);
  for(let i=0;i<3;i++){const decoded=decodeHTMLEntities(text);if(decoded===text)break;text=decoded;}
- text=text.replace(/<br\\s*\\/?\\s*>/gi,"\\n")
-  .replace(/<li\\b[^>]*>/gi,"• ")
-  .replace(/<\\/(?:p|div|section|article|h[1-6]|li|ul|ol|blockquote|tr)>/gi,"\\n")
+ text=text.replace(/<br\s*\/?\s*>/gi,"\n")
+  .replace(/<li\b[^>]*>/gi,"• ")
+  .replace(/<\/(?:p|div|section|article|h[1-6]|li|ul|ol|blockquote|tr)>/gi,"\n")
   .replace(/<[^>]*>/g," ");
  text=decodeHTMLEntities(text);
- return text.replace(/\\r/g,"").replace(/[ \\t]+\\n/g,"\\n").replace(/\\n[ \\t]+/g,"\\n").replace(/[ \\t]{2,}/g," ").replace(/\\n{3,}/g,"\\n\\n").trim();
+ return text.replace(/\r/g,"").replace(/[ \t]+\n/g,"\n").replace(/\n[ \t]+/g,"\n").replace(/[ \t]{2,}/g," ").replace(/\n{3,}/g,"\n\n").trim();
 }
 function esc(v){return String(v==null?"":v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
 function isReady(){return Boolean(cfg.url&&cfg.anonKey&&!/YOUR_|PASTE_|example/i.test(cfg.url+cfg.anonKey)&&window.supabase&&typeof window.supabase.createClient==="function");}
