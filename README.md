@@ -1,18 +1,34 @@
-# ScholarNews
+# Scholar News — Premium Opportunity Finder
 
-Scholar News public opportunities dashboard.
+**Discover opportunities. Shape your future.**
 
-Site: https://scholarnews.github.io/
+Scholar News brings scholarships, academic and research jobs, fellowships, internships, awards, conferences, and training opportunities together in a responsive, searchable website.
 
-The dashboard is a static GitHub Pages site. Its current snapshot is sourced from the Science Careers parser output `sciencecareers_opportunities_latest100.csv`.
+## Live websites
 
-Included features:
-- Search
-- Opportunity-type, country, hosting institution, level, organization type, discipline and status filters
-- Deadline range filters
-- Deadline urgency ordering
-- Remaining-days ordering
-- Opportunity detail view
-- Scholar News contact links
+- GitHub Pages: https://scholarnews.github.io/
+- Cloudflare Worker: https://scholarnews.scholarnews.workers.dev/
 
-To refresh the dashboard, regenerate the parser CSV and update the dashboard data on GitHub.
+## Website features
+
+- Responsive, premium editorial-style design with the official Scholar News logo and navy/orange brand palette.
+- Opportunity search across titles, institutions, countries, disciplines, and listing details.
+- Filters for type, location, institution, study/career level, organization, field, status, deadline, publication date, and contact email.
+- Deadline-aware sorting, “closing soon” reminders, and trending-field summaries.
+- Listing details, direct links to the original opportunity, locally saved listings, pagination, and dark mode.
+- Snapshot-first loading with a Google Sheets refresh and local fallbacks.
+
+## Project files
+
+- `index.html` — website structure and metadata.
+- `premium.css` — responsive styling and light/dark themes.
+- `premium.js` — data loading, search, filters, sorting, details, and saved listings.
+- `SNLogo2.png` — optimized site logo.
+- `data/` — opportunity snapshots used by the site.
+- `scripts/sync_google_sheet.py` and `.github/workflows/sync-google-sheet.yml` — data synchronization and GitHub Pages deployment.
+
+## Opportunity data and deployments
+
+The site loads `data/opportunities.json` first, then attempts to refresh from the configured Google Sheet. The existing GitHub Actions workflow updates the data snapshot and deploys GitHub Pages. The Cloudflare Worker is connected to the GitHub repository through Cloudflare Workers Builds and deploys when the production branch changes.
+
+**Important:** Keep the `data/` directory, the sync script, and the workflow when editing the site. The static website does not require a Node build step or package installation.
