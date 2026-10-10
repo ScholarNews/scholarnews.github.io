@@ -15,7 +15,7 @@ let db=null, user=null, selected=null, activeTool="cover", apps=[], drafts=[], p
 const trim=v=>String(v==null?"":v).trim();
 function decodeHTMLEntities(value){const node=document.createElement("textarea");node.innerHTML=String(value==null?"":value);return node.value;}
 function cleanOfficialText(value){
- let text=String(value==null?"":value);
+ let text=String(value==null?"":value).replace(/\\([<>])/g,"$1");
  for(let i=0;i<3;i++){const decoded=decodeHTMLEntities(text);if(decoded===text)break;text=decoded;}
  text=text.replace(/<br\s*\/?\s*>/gi,"\n")
   .replace(/<li\b[^>]*>/gi,"• ")
