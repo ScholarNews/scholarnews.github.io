@@ -99,7 +99,7 @@
     return value;
   }
   function plainOpportunityText(raw) {
-    let value = decodeHTMLMarkup(raw);
+    let value = decodeHTMLMarkup(raw).replace(/\\([<>])/g, "$1");
     value = value.replace(/<br\s*\/?\s*>/gi, "\n").replace(/<li\b[^>]*>/gi, "• ").replace(/<\/(?:p|div|section|article|h[1-6]|li|ul|ol|blockquote|tr)>/gi, "\n").replace(/<[^>]*>/g, " ");
     return decodeHTMLMarkup(value).replace(/\r/g, "").replace(/[ \t]+\n/g, "\n").replace(/\n[ \t]+/g, "\n").replace(/[ \t]{2,}/g, " ").replace(/\n{3,}/g, "\n\n").trim();
   }
@@ -108,7 +108,7 @@
     // never copy arbitrary attributes such as onclick, style, or event handlers.
     const allowedTags = new Set(["P", "STRONG", "B", "EM", "I", "U", "BR", "UL", "OL", "LI", "A", "H2", "H3", "H4", "H5", "H6", "BLOCKQUOTE", "HR", "DIV", "SPAN"]);
     const droppedTags = new Set(["SCRIPT", "STYLE", "IFRAME", "OBJECT", "EMBED", "SVG", "MATH", "TEMPLATE", "FORM", "INPUT", "BUTTON", "VIDEO", "AUDIO"]);
-    const parsed = new DOMParser().parseFromString(decodeHTMLMarkup(raw), "text/html");
+    const parsed = new DOMParser().parseFromString(decodeHTMLMarkup(raw).replace(/\\([<>])/g, "$1"), "text/html");
     const output = document.createElement("div");
     function clean(node) {
       if (node.nodeType === Node.TEXT_NODE) return document.createTextNode(node.nodeValue || "");
