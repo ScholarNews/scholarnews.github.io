@@ -256,7 +256,7 @@
     if (state.refreshing) return;
     state.refreshing = true; $("refreshBtn").disabled = true; $("refreshBtn").textContent = "…";
     if (manual) setStatus("loading", "Refreshing from Google Sheets…");
-    try { const rows = await fetchLive(); updateData(rows, "Live Google Sheet · " + rows.length + " records", "live"); toast("Opportunity feed refreshed"); }
+    try { const rows = await fetchLive(); updateData(rows, "Live GS · " + rows.length + " records", "live"); toast("Opportunity feed refreshed"); }
     catch (error) { if (!state.rows.length) setStatus("error", "Data source unavailable"); else setStatus("snapshot", "Using saved snapshot · live refresh unavailable"); if (manual) toast("Live refresh failed; current listings were kept.", true); }
     finally { state.refreshing = false; $("refreshBtn").disabled = false; $("refreshBtn").textContent = "↻"; }
   }
@@ -268,7 +268,7 @@
       ["Location", locationOf(row)], ["Eligibility", v(row, "eligibility")], ["Closing date", dateLabel(v(row, "closing_date"))],
       ["Time remaining", remaining(row) === null ? v(row, "remaining") : (remaining(row) < 0 ? Math.abs(remaining(row)) + " days past deadline" : remaining(row) + " days left")],
       ["Coverage / funding", v(row, "coverage")], ["Position / duration", [v(row, "position_type"), v(row, "work_mode"), v(row, "duration"), v(row, "contract")].filter(Boolean).join(" · ")],
-      ["Contact email", v(row, "emails")], ["Published", dateLabel(v(row, "published_date"))], ["Keywords", v(row, "viral_keywords")], ["Hashtags", v(row, "viral_hashtags")]
+      ["Contact email", v(row, "emails")], ["Published", dateLabel(v(row, "published_date"))]
     ].filter(pair => pair[1]);
     $("detailTitle").textContent = titleOf(row);
     $("detailSub").textContent = [institutionOf(row), locationOf(row)].filter(Boolean).join(" · ");

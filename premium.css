@@ -34,3 +34,28 @@
 .rich-summary blockquote{margin:12px 0;padding:9px 13px;border-left:3px solid var(--orange);background:var(--soft);border-radius:0 7px 7px 0}
 .rich-summary h2,.rich-summary h3,.rich-summary h4,.rich-summary h5,.rich-summary h6{font-family:var(--serif);line-height:1.35;margin:15px 0 7px}
 .rich-summary hr{border:0;border-top:1px solid var(--line);margin:13px 0}
+
+
+/* Increase the Scholar News logo contrast in the dark footer. */
+.footer-brand>a{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:fit-content;
+  max-width:100%;
+  padding:10px 13px;
+  border-radius:10px;
+  background:#fff;
+  border:1px solid rgba(255,255,255,.75);
+  box-shadow:0 5px 18px rgba(0,0,0,.16);
+}
+.footer-brand>a img{
+  width:190px;
+  max-width:100%;
+  filter:none;
+  mix-blend-mode:normal;
+}
+@media(max-width:560px){
+  .footer-brand>a{padding:8px 10px;border-radius:9px}
+  .footer-brand>a img{width:165px}
+}
