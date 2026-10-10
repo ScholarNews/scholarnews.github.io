@@ -1,14 +1,18 @@
 /*
+  Cache-Control: no-cache, no-store, must-revalidate
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
   X-Frame-Options: DENY
   Permissions-Policy: camera=(), microphone=(), geolocation=()
 
+/*.html
+  Cache-Control: no-cache, no-store, must-revalidate
+
 /*.css
-  Cache-Control: public, max-age=86400
+  Cache-Control: public, max-age=0, must-revalidate
 
 /*.js
-  Cache-Control: public, max-age=86400
+  Cache-Control: public, max-age=0, must-revalidate
 
 /*.png
   Cache-Control: public, max-age=604800
