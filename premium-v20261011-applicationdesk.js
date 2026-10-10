@@ -100,8 +100,8 @@
   }
   function plainOpportunityText(raw) {
     let value = decodeHTMLMarkup(raw);
-    value = value.replace(/<br\\s*\\/?\\s*>/gi, "\\n").replace(/<li\\b[^>]*>/gi, "• ").replace(/<\\/(?:p|div|section|article|h[1-6]|li|ul|ol|blockquote|tr)>/gi, "\\n").replace(/<[^>]*>/g, " ");
-    return decodeHTMLMarkup(value).replace(/\\r/g, "").replace(/[ \\t]+\\n/g, "\\n").replace(/\\n[ \\t]+/g, "\\n").replace(/[ \\t]{2,}/g, " ").replace(/\\n{3,}/g, "\\n\\n").trim();
+    value = value.replace(/<br\s*\/?\s*>/gi, "\n").replace(/<li\b[^>]*>/gi, "• ").replace(/<\/(?:p|div|section|article|h[1-6]|li|ul|ol|blockquote|tr)>/gi, "\n").replace(/<[^>]*>/g, " ");
+    return decodeHTMLMarkup(value).replace(/\r/g, "").replace(/[ \t]+\n/g, "\n").replace(/\n[ \t]+/g, "\n").replace(/[ \t]{2,}/g, " ").replace(/\n{3,}/g, "\n\n").trim();
   }
   function sanitizeSummaryHTML(raw) {
     // Descriptions come from the opportunity feed. Keep basic rich-text tags only;
