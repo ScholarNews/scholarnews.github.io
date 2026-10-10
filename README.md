@@ -34,14 +34,30 @@ The site loads `data/opportunities.json` first, then attempts to refresh from th
 **Important:** Keep the `data/` directory, the sync script, and the workflow when editing the site. The static website does not require a Node build step or package installation.
 
 
-## Application preparation toolkit — first release
+## Scholar News Application Desk — `/premium/`
 
-The application toolkit adds a browser-based workspace for:
-- Requirement keyword extraction and a manually verified eligibility checklist.
-- Cover / motivation letter drafting.
-- CV tailoring review notes.
-- Academic email drafting.
-- Statement-of-purpose, research, teaching, personal, career-goal and intent statement scaffolds.
-- Local application tracker with deadlines, statuses, official links and saved drafts.
+The application workspace is now a separate responsive page at **https://scholarnews.github.io/premium/**. Opportunity cards and their details include **Apply with Scholar News**, which opens the desk with the selected opportunity pre-filled.
 
-This initial release uses local templates; it does not call an AI model or send email notifications. Drafts and tracking data are stored in the current browser's local storage, not synced between devices or accounts. Users should verify all details against the official opportunity and must not include unsupported claims. An AI backend, private account storage, real reminders, DOCX/PDF export, and cross-device synchronization are planned follow-up work.
+### Application tools
+- Eligibility and requirement checklist (keyword-assisted; not an official eligibility decision).
+- Cover / motivation letter templates.
+- CV criteria review and tailoring checklist.
+- Academic email drafts and academic statement scaffolds.
+- Editable drafts that can be copied or downloaded as text.
+- An application tracker with deadlines, official links, notes and status updates.
+
+### Student accounts and private records
+
+The page includes email/password authentication, profile/CV information, private CV file upload/download/delete, account-saved drafts and application records. The static-site code is provided, together with Supabase row-level security policies and a private storage-bucket policy.
+
+**Account functionality requires one-time configuration before it works.** Create a Supabase project, run `supabase/schema.sql` in its SQL Editor, then set the project URL and public publishable/anon key in `premium/config.js`. Configure the sign-in / password-reset redirect URLs in Supabase as described in [premium/SETUP.md](premium/SETUP.md). Never add a service-role/secret key to the public site. Do not store real CVs before testing two separate accounts for data isolation.
+
+### Project files
+- `premium/index.html`, `premium/app.css`, `premium/app.js` — standalone application desk UI, styles and client logic.
+- `premium/config.js` — public Supabase configuration placeholder; blank until set up.
+- `supabase/schema.sql` — private tables, row-level security policies and private CV bucket.
+- `premium/SETUP.md` — Supabase setup, redirect configuration and verification checklist.
+- `premium-v20261010-1937.js/css` — homepage opportunity feed, quick-apply actions and site styling.
+- `index.html` — main opportunity finder; the embedded application workspace has been removed.
+
+Templates and eligibility extraction are not AI-powered in this release. The tracker records progress on Scholar News; it does not submit applications to external institutions or send automatic email/push reminders. Drafts, CV text and applications are saved to Supabase only after the owner configures the project and signs in. The homepage’s locally saved opportunity feature remains device/browser-specific.
