@@ -24,9 +24,9 @@
       <a class="brand" href="#top" aria-label="Scholar News home"><img src="./SNLogo2.png" alt="Scholar News" width="400" height="79"></a>
       <button class="mobile-menu" id="mobileMenu" type="button" aria-label="Open navigation" aria-expanded="false"><span></span><span></span><span></span></button>
       <nav class="main-nav" id="mainNav" aria-label="Main navigation">
-        <a class="nav-link active" href="#opportunities">Opportunities</a><a class="nav-link" href="#deadlineRadar">Closing soon</a><a class="nav-link" href="#about">About us</a>
+        <a class="nav-link active" href="#opportunities">Opportunities</a><a class="nav-link" href="#deadlineRadar">Closing soon</a><a class="nav-link" href="#about">About us</a><a class="nav-link" href="./premium/">Application desk</a>
         <button class="theme-toggle" id="themeBtn" type="button" aria-label="Toggle dark mode"><span class="theme-icon" aria-hidden="true">☾</span><span class="theme-label">Dark mode</span></button>
-        <a class="nav-cta" href="#opportunities">Find opportunities <span aria-hidden="true">↗</span></a>
+        <a class="nav-cta" href="./premium/">Application desk <span aria-hidden="true">↗</span></a>
       </nav>
     </div>
   </header>
@@ -51,25 +51,6 @@
       <div class="hero-bottom"><div class="shell hero-bottom-inner"><span><i class="tiny-check">✓</i> Search with purpose</span><span><i class="tiny-check">✓</i> Compare deadlines</span><span><i class="tiny-check">✓</i> Apply at the source</span></div></div>
     </section>
     
-    <section class="shell app-toolkit" id="applicationToolkit">
-      <div class="app-toolkit-head"><div><div class="section-eyebrow">YOUR APPLICATION WORKSPACE</div><h2>From opportunity to <em>application-ready.</em></h2><p>Turn a selected listing into a practical checklist and prepare tailored document drafts using your own experience. Your drafts and tracker are saved in this browser on this device.</p></div><span class="app-pill">Free toolkit · First release</span></div>
-      <div class="app-toolkit-grid">
-        <article class="app-tool-card"><span class="tool-icon">✓</span><h3>Eligibility & requirements</h3><p>Extract requirements from an opportunity description and track what you still need to verify.</p><button type="button" data-app-tool="eligibility">Check requirements</button></article>
-        <article class="app-tool-card"><span class="tool-icon">✉</span><h3>Cover & motivation letter</h3><p>Draft an editable letter tailored to the opportunity and your real qualifications.</p><button type="button" data-app-tool="cover">Write a letter</button></article>
-        <article class="app-tool-card"><span class="tool-icon">▤</span><h3>CV tailoring assistant</h3><p>Compare your current CV with the listing and improve relevant bullets without inventing experience.</p><button type="button" data-app-tool="cv">Tailor my CV</button></article>
-        <article class="app-tool-card"><span class="tool-icon">＠</span><h3>Academic email</h3><p>Prepare supervisor inquiries, application emails, referee requests and polite follow-ups.</p><button type="button" data-app-tool="email">Draft an email</button></article>
-        <article class="app-tool-card"><span class="tool-icon">✎</span><h3>Academic statements</h3><p>Start a statement of purpose, research statement, teaching statement or letter of intent.</p><button type="button" data-app-tool="statement">Write a statement</button></article>
-        <article class="app-tool-card"><span class="tool-icon">▣</span><h3>Application tracker</h3><p>Save a listing, track progress, record deadlines and review the checklist for each application.</p><button type="button" data-app-tool="tracker">Open tracker</button></article>
-      </div>
-      <div class="app-workspace" id="appWorkspace" hidden>
-        <div class="app-toolkit-head"><div><div class="section-eyebrow" id="appEyebrow">APPLICATION TOOL</div><h2 id="appWorkspaceTitle">Prepare your application</h2><p id="appWorkspaceDesc"></p></div><button type="button" class="app-secondary" id="appWorkspaceClose">Close</button></div>
-        <form id="appForm"><div class="app-form-grid" id="appFormFields"></div><div class="app-actions"><button class="app-primary" type="submit" id="appGenerate">Generate draft</button><button class="app-secondary" type="button" id="appSaveProgress">Save to tracker</button></div></form>
-        <div class="app-output" id="appOutput" hidden><label class="app-field"><span id="appOutputLabel">Editable draft</span><textarea id="appDraft" spellcheck="true"></textarea></label><div class="app-actions"><button type="button" class="app-primary" id="appCopy">Copy draft</button><button type="button" class="app-secondary" id="appDownload">Download .txt</button><button type="button" class="app-secondary" id="appSaveDraft">Save draft</button></div></div>
-        <div class="app-note">This first release uses local templates and requirement extraction; it does not call an AI service. Check every requirement against the official listing and edit all drafts before use. Never add claims, publications or experience that are not true. Your profile, drafts and tracker are stored locally in this browser.</div>
-      </div>
-      <div id="appTrackerPanel" class="app-workspace" hidden><h3>My application tracker</h3><p class="app-note">Saved on this browser only. No account sync or email notifications are enabled in this first release.</p><div id="appTrackerList" class="app-tracker-list"></div></div>
-    </section>
-
     <section class="opportunities-section" id="opportunities"><div class="shell">
       <div class="section-intro"><div><div class="section-eyebrow">THE OPPORTUNITY DESK</div><h2>Find what <em>moves you forward.</em></h2><p>Explore a growing collection of opportunities selected for the next step in your academic and professional journey.</p></div><div class="updated-indicator"><span class="pulse-dot"></span><span id="sourceStatus">Loading opportunity data…</span><button id="refreshBtn" class="refresh-button" type="button" title="Refresh opportunities" aria-label="Refresh opportunities">↻</button></div></div>
       <div class="search-panel"><div class="search-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><circle cx="10.8" cy="10.8" r="6.8" stroke="currentColor" stroke-width="1.8"/><path d="m16 16 4.3 4.3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></div><label class="sr-only" for="searchInput">Search opportunities</label><input id="searchInput" type="search" autocomplete="off" placeholder="Search by title, institution, country, field or keyword…"><kbd class="search-hint">⌕ Search</kbd><button type="button" class="search-submit" id="searchFocusBtn">Search opportunities <span aria-hidden="true">→</span></button></div>
@@ -98,6 +79,5 @@
   <footer class="site-footer"><div class="shell footer-main"><div class="footer-brand"><a href="#top"><img src="./SNLogo2.png" alt="Scholar News" width="400" height="79" loading="lazy"></a><p>Find your next opportunity.<br>Build the future you imagine.</p></div><div class="footer-links"><div><span class="footer-heading">DISCOVER</span><a href="#opportunities">All opportunities</a><a href="#deadlineRadar">Closing soon</a><a href="#about">About Scholar News</a></div><div><span class="footer-heading">FOLLOW ALONG</span><a href="https://web.facebook.com/ScholarNewsSN" target="_blank" rel="noopener">Facebook ↗</a><a href="https://linkedin.com/in/scholarnews" target="_blank" rel="noopener">LinkedIn ↗</a><a href="https://www.pinterest.com/scholar_news" target="_blank" rel="noopener">Pinterest ↗</a></div></div></div><div class="shell footer-bottom"><span>© <span id="currentYear"></span> Scholar News. Built for curious minds.</span><a href="#top">Back to top ↑</a></div></footer>
   <div class="detail-overlay hidden" id="detailPanel" role="dialog" aria-modal="true" aria-labelledby="detailTitle"><div class="detail-modal"><button class="detail-close" id="detailClose" type="button" aria-label="Close details">×</button><div class="detail-modal-kicker"><span class="detail-dot"></span> OPPORTUNITY DETAILS</div><h2 id="detailTitle">Opportunity title</h2><p class="detail-subtitle" id="detailSub"></p><div id="detailBody"></div></div></div><div class="toast-region" id="toastRegion" aria-live="polite" aria-atomic="true"></div>
   <script src="./premium-v20261010-1937.js" defer></script>
-  <script src="./application-tools.js" defer></script>
 </body>
 </html>
