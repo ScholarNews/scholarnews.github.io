@@ -59,3 +59,12 @@
   .footer-brand>a{padding:8px 10px;border-radius:9px}
   .footer-brand>a img{width:165px}
 }
+
+/* Premium application entry point on opportunity cards and detail dialogs */
+.card-footer-premium{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.quick-apply-button{display:inline-flex;align-items:center;justify-content:center;gap:10px;border:1px solid #e87b2b;border-radius:9px;background:linear-gradient(135deg,#ff9b4d,#f5822b);color:#111b30;padding:10px 13px;font:700 11px/1.25 var(--sans);box-shadow:0 5px 14px rgba(245,130,43,.16);transition:transform .18s,box-shadow .18s}
+.quick-apply-button:hover{transform:translateY(-1px);box-shadow:0 8px 20px rgba(245,130,43,.23)}
+.quick-apply-button span{font-size:15px}
+.detail-quick-apply{padding:12px 16px}
+.detail-actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+@media(max-width:560px){.card-footer-premium{align-items:stretch}.card-footer-premium>*{flex:1 1 auto}.quick-apply-button{font-size:10px;padding:10px 9px}.detail-actions>*{flex:1 1 45%;}}
