@@ -427,8 +427,120 @@ function useMotivationSuggestion(target,suggestion){
  }
 }
 function renderTool(tool){if(tool==="tracker"){pendingAutoTrack=true;goView("applications");if(user)autoTrack();return;}if(!tools[tool])tool="cover";activeDraftKey="";activeDraftTitle="";activeTool=tool;const d=tools[tool],number=Object.keys(tools).indexOf(tool)+1;$("toolEyebrow").textContent="TOOL "+String(number).padStart(2,"0")+" / APPLICATION STUDIO";$("toolTitle").textContent=d.title;$("toolDescription").textContent=d.desc;$("toolLargeIcon").textContent=d.icon;$("toolFields").innerHTML=d.fields.map(fieldHTML).join("");document.querySelectorAll(".prepare-tool").forEach(b=>b.classList.toggle("active",b.dataset.tool===tool));$("toolOutput").hidden=true;const defaults={title:valueFrom(["title","opportunity_title"]),institution:valueFrom(["hosting_institution","funding_organization","institution","organization"]),description:cleanOfficialText(valueFrom(["description","job_description","summary"])),url:valueFrom(["application_url","source_url","url"])};Object.keys(defaults).forEach(k=>{const el=$("field-"+k);if(el&&!el.value)el.value=defaults[k];});prefillActiveToolFromProfile();addMotivationSuggestions(tool);goView("prepare");}
+function buildProfessionalCoverLetter(v){
+ const raw=String(v.profile||"").replace(/\r\n?/g,"\n");
+ const sections={other:[]};let current="other";const allLines=[];
+ for(const rawLine of raw.split("\n")){
+  const line=rawLine.replace(/^\s*(?:(?:[•▪◦●○◆◇■□‣⁃·∙*]+)\s*|\(?\d{1,3}[.)]\s+|[A-Za-z][.)]\s+)/u,"").replace(/[ \t]{2,}/g," ").trim();
+  if(!line)continue;
+  const heading=line.match(/^(professional summary|experience|research|education|teaching|skills|publications|projects|awards|certifications|languages)\s*:?$/i);
+  if(heading){current=heading[1].toLowerCase();if(!sections[current])sections[current]=[];continue;}
+  if(/^(?:country\s*\/\s*residency|e-?mail)\s*:/i.test(line)||/^(?:https?:\/\/|www\.)/i.test(line)||/^[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}$/.test(line)||/^page\s+\d+(?:\s+of\s+\d+)?$/i.test(line))continue;
+  if(!sections[current])sections[current]=[];sections[current].push(line);allLines.push(line);
+ }
+ const all=allLines.join("\n");
+ const sectionText=key=>(sections[key]||[]).join("\n");
+ const summary=sectionText("professional summary");
+ const descriptions=cleanOfficialText(v.description||"");
+ const title=trim(v.title)||"the advertised opportunity",institution=trim(v.institution)||"the host institution",name=trim(v.name)||"[Your full name]",email=trim(v.email);
+ const has=re=>re.test(all);
+ const hasNano=has(/nanotechnolog|nano[- ]formulation|nanoparticle|drug delivery/i);
+ const hasComp=has(/molecular dynamics|molecular simulation|molecular docking|docking|qsar|computer-aided drug design|\bcadd\b|3d[- ]structure prediction|structure prediction/i);
+ const hasNetwork=has(/network pharmacology|go\s*\/\s*kegg|pathway enrichment|protein[- ]protein interaction|drug[- ]protein interaction/i);
+ const hasAI=has(/machine learning|artificial intelligence|\bai\/ml\b|\bml models?\b/i);
+ const hasBioinformatics=has(/bioinformatics|gene ontology|differential gene expression|genomics/i);
+ const hasBiochem=has(/biochemistry/i),hasCancer=has(/anticancer|cancer|carcinoma|therapeutic mechanism/i);
+ const hasTeaching=has(/teaching assistant|instructed|taught|teaching experience|mentoring|mentor|summer courses|under\/postgraduates/i);
+ const hasPhD=/\b(?:ph\.?\s*d\.?|doctorate(?:['’]?s)?\s+degree|doctoral degree)\b/i.test(all);
+ const hasMasters=/\bmaster(?:['’]?s)?\s+degree\b|\bmsc\b/i.test(all);
+ const yearsMatch=(summary+"\n"+all).match(/\b(\d{1,2}\+?)\s+years?\s+of\s+(?:academic\s+)?(?:teaching\s+and\s+research|research|teaching)\s+experience(?:\s+in\s+([^.\n]+))?/i);
+ const paragraphs=[];
+ if(yearsMatch){
+  paragraphs.push("I bring "+yearsMatch[1]+" years of "+(yearsMatch[0].match(/academic/i)?"academic ":"")+(yearsMatch[0].match(/teaching\s+and\s+research/i)?"teaching and research":yearsMatch[0].match(/teaching/i)?"teaching":"research")+" experience"+(yearsMatch[2]?" across "+yearsMatch[2].replace(/\s+and\s+/i," and "):"")+".");
+ }else{
+  const identity=hasBiochem?"biochemistry":hasBioinformatics?"bioinformatics and computational biology":"biomedical research";
+  paragraphs.push("My background in "+identity+" has developed through research, analytical work and collaboration across related scientific disciplines.");
+ }
+ const methods=[];
+ if(hasNano)methods.push("nanotechnology-based formulation and drug-delivery research");
+ if(hasComp)methods.push("computational drug-design methods, including molecular simulation, docking and QSAR");
+ if(hasAI)methods.push("machine-learning approaches to biomedical analysis");
+ if(hasNetwork)methods.push("network pharmacology and pathway-level analysis");
+ if(hasBioinformatics&&!hasNetwork)methods.push("bioinformatics and biological data analysis");
+ const roleParts=[];
+ if(/\bindependent researcher\b/i.test(all))roleParts.push("independent researcher");
+ if(/\bresearch assistant professor\b/i.test(all))roleParts.push("Research Assistant Professor");
+ let researchParagraph="";
+ if(methods.length){
+  const roleDescriptor=roleParts.length===2?"an independent researcher and Research Assistant Professor":roleParts[0]?.toLowerCase()==="independent researcher"?"an independent researcher":roleParts.length?"a Research Assistant Professor":"";
+  if(roleDescriptor){
+   researchParagraph="In recent appointments as "+roleDescriptor+", I have developed a research profile that connects "+methods.slice(0,2).join(" with ")+(methods.length>2?", alongside "+methods[2]:"")+".";
+  }else{
+   researchParagraph="My research brings together "+methods.slice(0,2).join(" and ")+(methods.length>2?", with further work in "+methods[2]:"")+".";
+  }
+ }else if(roleParts.length){
+  researchParagraph="In recent appointments as "+(roleParts.length===2?"an independent researcher and Research Assistant Professor":roleParts[0].toLowerCase()==="independent researcher"?"an independent researcher":"a Research Assistant Professor")+", I have contributed to independent and collaborative research while developing a broader academic profile.";
+ }else{
+  researchParagraph="My research experience has strengthened my ability to assess scientific questions carefully, work across related methods and communicate findings to research audiences.";
+ }
+ if(hasNetwork&&hasCancer)researchParagraph+=" In particular, I have used protein-interaction analysis and GO/KEGG pathway enrichment to investigate potential anticancer mechanisms, connecting computational findings with biologically relevant therapeutic questions.";
+ else if(hasNetwork)researchParagraph+=" I have applied these approaches to examine molecular interactions and biological pathways in disease-related research.";
+ paragraphs.push(researchParagraph);
+ const hasPublication=/published\s+\d+\s+research articles|peer-reviewed|book chapters|publications/i.test(all)||Boolean((sections["publications"]||[]).length);
+ const hasReviewer=/reviewed publications|member of reviewers|journal reviewing|peer-reviewed certificate|reviewer(?:s)? committee/i.test(all);
+ if(hasPublication||hasReviewer){
+  let output="";
+  if(hasPublication)output="My work has contributed to peer-reviewed journal articles and book chapters.";
+  if(hasReviewer)output+=(output?" ":"")+"I have also served as a manuscript reviewer for scientific journals.";
+  output+=" These experiences have strengthened my commitment to rigorous research and clear communication of scientific findings.";
+  paragraphs.push(output);
+ }
+ const education=sectionText("education");
+ if(hasPhD){
+  let degree="My doctoral training"+(hasBiochem?" in biochemistry":"")+" focused on ";
+  degree+=hasComp?"drug-design modelling and molecular simulation":hasNetwork?"computational analysis of biological mechanisms":"research in my scientific discipline";
+  degree+=".";
+  if(hasMasters&&/oxidative stress|male fertility/i.test(education+"\n"+all))degree+=" My earlier master's research examined oxidative stress and male fertility, giving me additional grounding in mechanistic biomedical research.";
+  paragraphs.push(degree);
+ }else if(hasMasters){
+  paragraphs.push("My master's-level training has given me a foundation in scientific research design, analysis and interpretation that I continue to build on in my work.");
+ }
+ if(hasTeaching){
+  let teaching="Alongside research, I have taught chemistry and biochemistry and contributed to short-course training in drug nano-formulation and in-silico ADMET analysis.";
+  if(/mentoring|mentor|under\/postgraduates|guidance/i.test(all))teaching+=" My teaching has also involved guiding and mentoring undergraduate and postgraduate learners.";
+  teaching+=" I value the role of clear, supportive teaching in helping students connect scientific concepts with practical research.";
+  paragraphs.push(teaching);
+ }
+ const targets=[];
+ if(/translational biomedical|biomedical discovery|biomedical sciences|biomedical applications/i.test(descriptions)&&(/biomedical|therapeutic|cancer|drug delivery|nanotechnolog/i.test(all)))targets.push("translational biomedical research");
+ if(/machine learning|artificial intelligence|\bai\/ml\b|ml\/ai/i.test(descriptions)&&hasAI)targets.push("machine-learning approaches to biomedical discovery");
+ if(/drug discovery|drug design|drug development/i.test(descriptions)&&(hasComp||/drug discovery|drug design/i.test(all)))targets.push("drug discovery and molecular design");
+ if(/chemical biology|proteomics|biophysical chemistry|synthetic chemistry|protein/i.test(descriptions)&&(hasBiochem||hasBioinformatics||hasNetwork))targets.push("molecular and protein-level research");
+ const motivation=trim(v.motivation||"").replace(/\s+/g," ").replace(/\.{2,}/g,".").trim();
+ const genericMotivation=/^(?:my background|my experience).{0,120}\b(?:aligns?|matches?)\b.{0,100}\b(?:opportunity|role)\b/i.test(motivation);
+ const evidenceFocus=[];
+ if(hasComp)evidenceFocus.push("computational drug-design methods");
+ if(hasNano)evidenceFocus.push("nanotechnology-based biomedical research");
+ if(hasAI)evidenceFocus.push("machine-learning analysis");
+ let fit="";
+ if(targets.length){
+  const targetText=targets.length===1?targets[0]:targets.length===2?targets[0]+" and "+targets[1]:targets.slice(0,-1).join(", ")+", and "+targets[targets.length-1];
+  fit="The emphasis on "+targetText+" is particularly compelling because my experience connects "+(evidenceFocus.length?evidenceFocus.slice(0,2).join(" with "):"biochemistry with computational analysis")+" to biomedical questions.";
+ }else if(evidenceFocus.length){
+  fit="I am keen to bring my experience in "+evidenceFocus.slice(0,2).join(" and ")+" to this opportunity and to contribute to the research priorities of "+institution+".";
+ }else{
+  fit="I am interested in the opportunity to contribute my research experience to "+title+" at "+institution+".";
+ }
+ if(motivation&&!genericMotivation&&!/^\[.*\]$/.test(motivation)){
+  let polished=motivation;if(!/[.!?]$/.test(polished))polished+=".";paragraphs.push(polished);
+ }
+ paragraphs.push(fit);
+ paragraphs.push("I would welcome the opportunity to discuss how my research experience, scholarly contributions and teaching background could support the work of "+institution+". Thank you for considering my application.");
+ const date=new Date().toLocaleDateString(undefined,{year:"numeric",month:"long",day:"numeric"});
+ return name+"\n"+(email?email+"\n":"")+date+"\n\nSelection Committee\n"+institution+"\n\nSubject: Application for "+title+"\n\nDear Selection Committee,\n\n"+paragraphs.filter(Boolean).join("\n\n")+"\n\nYours sincerely,\n"+name;
+}
 function makeDraft(tool,v){const title=v.title||"the advertised opportunity",institution=v.institution||"the host organization",name=v.name||"[Your name]",profileText=v.profile||"[Add your accurate qualifications and evidence]",description=cleanOfficialText(v.description||"[Insert specific criteria from the official listing]"),motivation=v.motivation||v.goals||"[Explain your genuine motivation and goals]",today=new Date().toLocaleDateString();
-if(tool==="cover")return name+"\n"+(v.email||"[Your email]")+"\n"+today+"\n\nSelection Committee\n"+institution+"\n\nSubject: Application for "+title+"\n\nDear Selection Committee,\n\nI am writing to express my interest in "+title+" at "+institution+". My relevant background includes:\n"+profileText+"\n\nI am particularly interested in this opportunity because "+motivation+".\n\nThe advertised criteria include "+description.slice(0,650)+(description.length>650?"…":"")+". I would welcome the opportunity to contribute my relevant experience and develop further in this area. I have included supporting details and evidence in my application materials.\n\nThank you for considering my application. I would be pleased to provide any additional information required.\n\nYours sincerely,\n"+name+"\n\n[Replace generic wording with concrete examples; verify every claim before submission.]";
+if(tool==="cover")return buildProfessionalCoverLetter(v);
 if(tool==="cv")return "CV TAILORING REVIEW — "+title+"\n\nTARGET CRITERIA\n"+description+"\n\nCURRENT EXPERIENCE / EVIDENCE\n"+profileText+"\n\nSUGGESTED REVIEW CHECKLIST\n1. Move the most relevant, accurate experience and skills toward the top.\n2. Match terminology to criteria only where it describes your real experience.\n3. Strengthen bullets using action + scope + outcome; include numbers only when true.\n4. Include publications, methods, teaching, grants or leadership only when supported by your record.\n5. Reduce unrelated detail if it obscures fit while preserving dates and credentials.\n6. Check required format, page limit and attachments in the official call.\n\nPRIORITY EMPHASIS\n"+(v.target||"[Specify the most important criteria]")+"\n\nThis is a review framework, not an automatically verified CV. Do not add experience or skills you cannot substantiate.";
 if(tool==="eligibility"){const patterns=[["Degree / qualification",/ph\.?d\.?|doctorate|master'?s|bachelor'?s|degree|qualification/i],["Experience",/years? of experience|experience|postdoctoral|teaching experience/i],["Deadline",/deadline|apply by|applications? (?:close|due)|closing date/i],["Required documents",/cv|resume|cover letter|motivation letter|statement of purpose|research statement|transcript|recommendation|reference letter/i],["Eligibility / residency",/citizen|citizenship|resident|residency|eligible|eligibility|international applicants/i],["Research / subject fit",/research|discipline|field of study|speciali[sz]ation|subject area/i],["Funding / salary",/funded|funding|stipend|salary|tuition|benefit/i],["Submission route",/apply online|application portal|submit|application form/i]];const found=patterns.filter(p=>p[1].test(description)).map(p=>p[0]);return "ELIGIBILITY & REQUIREMENTS REVIEW — "+title+"\n\nLISTING REVIEW CHECKLIST\n"+(found.length?found.map((x,i)=>(i+1)+". [ ] "+x+" — verify the exact rule and your evidence in the official call.").join("\n"):"No common requirement patterns detected. Manually review the complete official listing.")+"\n\nYOUR QUALIFICATIONS / EVIDENCE\n"+profileText+"\n\nOFFICIAL OPPORTUNITY TEXT\n"+description+"\n\nIMPORTANT: This is keyword-assisted extraction, not an eligibility decision. Confirm nationality/residency, degree dates, age limits, exclusions, funding conditions, document specifications and deadline directly with the provider.";}
 if(tool==="email"){const purpose=v.purpose||"application",subject=purpose==="supervisor"?"Prospective research opportunity inquiry":purpose==="referee"?"Request for a recommendation letter":purpose==="followup"?"Follow-up regarding "+title:"Inquiry regarding "+title;const extra=purpose==="referee"?"Would you feel comfortable providing a recommendation based on your knowledge of my work? I can share my CV, the opportunity description, deadline and relevant project details.":purpose==="followup"?"I am writing to politely follow up on my previous message. I understand you have many commitments, and I appreciate your time.":purpose==="supervisor"?"If my background aligns with your current work, I would be grateful to know whether you may be considering students or researchers in this area.":"Could you please advise on the next steps or clarify any relevant requirements?";return "Subject: "+subject+"\n\nDear "+(v.recipient||"Professor / Dr [Surname]")+",\n\nI hope you are well. My name is "+name+", and I am contacting you regarding "+title+" at "+institution+".\n\n"+(v.description||"I would appreciate your guidance regarding this opportunity and its application requirements.")+"\n\nMy relevant background includes:\n"+profileText+"\n\n"+extra+"\n\nThank you for your time and consideration.\n\nKind regards,\n"+name+"\n[Contact information]";}
