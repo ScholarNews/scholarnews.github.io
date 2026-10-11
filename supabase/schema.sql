@@ -68,3 +68,6 @@ drop policy if exists "Students update their own CV files" on storage.objects;
 create policy "Students update their own CV files" on storage.objects for update to authenticated using(bucket_id='student-cvs' and (storage.foldername(name))[1]=(select auth.uid()::text)) with check(bucket_id='student-cvs' and (storage.foldername(name))[1]=(select auth.uid()::text));
 drop policy if exists "Students delete their own CV files" on storage.objects;
 create policy "Students delete their own CV files" on storage.objects for delete to authenticated using(bucket_id='student-cvs' and (storage.foldername(name))[1]=(select auth.uid()::text));
+
+-- Refresh the API schema cache so newly created public tables are visible to the browser client.
+notify pgrst, 'reload schema';
