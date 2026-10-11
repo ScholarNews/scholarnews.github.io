@@ -77,16 +77,24 @@ function guessCVFacts(raw){
  const text=normalizeCVText(raw),lines=text.split("\n").map(line=>line.trim()).filter(Boolean);
  const email=(text.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i)||[])[0]||"";
  let fullName="";
- const skip=/^(curriculum vitae|resume|résumé|cv|personal details|contact|contact information|professional profile|profile|education|experience|work experience|employment history|skills|publications|references|research interests|statement of purpose)$/i;
- for(const line of lines.slice(0,12)){
-  if(line.length>65||skip.test(line)||/@|https?:\/\/|www\.|[\d]{3,}/i.test(line))continue;
-  if(/^[\p{L}][\p{L}'’.-]+(?:\s+[\p{L}][\p{L}'’.-]+){1,4}$/u.test(line)){fullName=line;break;}
+ const headingAt=text.search(/\b(?:PROFESSIONAL\s+SUMMARY|PROFESSIONAL\s+EXPERIENCE|EDUCATION|WORK\s+EXPERIENCE|SKILLS|PUBLICATIONS)\b/i);
+ const headerText=text.slice(0,headingAt>=0?headingAt:Math.min(text.length,900));
+ const nameCandidates=[...headerText.split(/[|\n]/),...lines.slice(0,12)];
+ const skip=/^(curriculum vitae|resume|résumé|cv|personal details|contact|contact information|professional profile|profile|education|experience|work experience|employment history|skills|publications|references|research interests|statement of purpose|phd|m\.?sc\.?|b\.?sc\.?)$/i;
+ for(let candidate of nameCandidates.slice(0,30)){
+  candidate=candidate.replace(/^\s*(?:PG|PAGE)\.?\s*\d+\s*(?:\/|OF)\s*\d+\s*/i,"")
+   .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi," ")
+   .replace(/(?:https?:\/\/|www\.)\S+/gi," ")
+   .replace(/\+?\d[\d\s().-]{7,}\d/g," ")
+   .replace(/\s+/g," ").trim();
+  if(candidate.length>65||skip.test(candidate)||/@|https?:\/\/|www\.|[\d]{3,}/i.test(candidate))continue;
+  if(/^[\p{L}][\p{L}'’.-]+(?:\s+[\p{L}][\p{L}'’.-]+){1,4}$/u.test(candidate)){fullName=candidate;break;}
  }
  let education_level="";
- if(/\b(postdoctoral|post-doc|postdoc)\b/i.test(text))education_level="Postdoctoral";
- else if(/\b(ph\.?\s*d\.?|doctor of philosophy|doctorate|doctoral candidate)\b/i.test(text))education_level="PhD / Doctorate";
+ if(/\b(ph\.?\s*d\.?|doctor of philosophy|doctorate|doctoral candidate)\b/i.test(text))education_level="PhD / Doctorate";
  else if(/\b(master'?s|m\.?\s*sc\.?|m\.?\s*a\.?|m\.?\s*eng\.?|mba|mph)\b/i.test(text))education_level="Master’s";
  else if(/\b(bachelor'?s|b\.?\s*sc\.?|b\.?\s*a\.?|b\.?\s*eng\.?)\b/i.test(text))education_level="Bachelor’s";
+ else if(/\b(postdoctoral|post-doc|postdoc)\b/i.test(text))education_level="Postdoctoral";
  const institutionLine=lines.find(line=>line.length<130&&/\b(university|college|institute|hospital|laboratory|school)\b/i.test(line)&&!/education|institutional knowledge|school of thought/i.test(line));
  const institution=institutionLine?institutionLine.split(/[,;|]/).map(part=>part.trim()).filter(Boolean).find(part=>/\b(university|college|institute|hospital|laboratory|school)\b/i.test(part))||institutionLine:"";
  let discipline="";
