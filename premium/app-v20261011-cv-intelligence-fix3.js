@@ -529,8 +529,8 @@ function buildProfessionalCoverLetter(v){
  if(targets.length){
   const selectedTargets=targets.slice(0,3);
   const targetText=selectedTargets.length===1?selectedTargets[0]:selectedTargets.length===2?selectedTargets[0]+" and "+selectedTargets[1]:selectedTargets.slice(0,-1).join(", ")+", and "+selectedTargets[selectedTargets.length-1];
-  const experienceText=evidenceFocus.length>=2?"my experience combining "+evidenceFocus.slice(0,2).join(" with "):evidenceFocus.length===1?"my background in "+evidenceFocus[0]:"my background in biochemistry and computational analysis";
-  fit="The search's emphasis on "+targetText+" aligns closely with "+experienceText+" in support of biomedical research.";
+  const researchBridge=evidenceFocus.length>=2?"my research, which bridges "+evidenceFocus.slice(0,2).join(" and "):evidenceFocus.length===1?"my background in "+evidenceFocus[0]:"my background in biochemistry and computational analysis";
+  fit="The search's emphasis on "+targetText+" is a strong match for "+researchBridge+".";
  }else if(evidenceFocus.length){
   fit="I am keen to apply my background in "+evidenceFocus.slice(0,2).join(" and ")+" to this opportunity and contribute to the research priorities of "+institution+".";
  }else{
