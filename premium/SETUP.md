@@ -53,7 +53,34 @@ The CV uploader uses a private Storage bucket whose exact ID is `student-cvs`. T
 
 Do not create a public bucket, do not change the app's bucket name, and do not place a service-role or secret key in the website. The repair SQL creates/updates the private bucket and re-establishes the per-user storage access policies.
 
-${insertBefore}
+
+## Fix: “could not find the table 'public.applications' in the schema cache”
+
+The CV-bucket-only repair does not create the application tracker tables. In the **same Supabase project** whose URL is set in `premium/config.js`, open **SQL Editor**, run the entire `supabase/schema.sql` file (or the complete `supabase/fix-account-tables.sql` repair script), and confirm it completes successfully. The script creates missing profiles, applications, drafts and CV metadata tables, applies row-level security, keeps the CV bucket private, and requests a PostgREST schema-cache refresh. Then reload the Application Desk.
+
+If the error persists, check the project URL in `premium/config.js` against the project selected in the dashboard and run this diagnostic query:
+
+~~~sql
+select to_regclass('public.profiles') as profiles_table,
+       to_regclass('public.applications') as applications_table,
+       to_regclass('public.drafts') as drafts_table,
+       to_regclass('public.cv_files') as cv_files_table;
+~~~
+
+Each result should show its table name, not `NULL`.
+
+## Verify the CV bucket is private
+
+In **Storage → Buckets**, select `student-cvs` and verify the Public setting is off. You can also execute:
+
+~~~sql
+select id, name, public from storage.buckets where id = 'student-cvs';
+~~~
+
+The result must show `public = false`. Private buckets require authenticated access policies and signed URLs for downloads. <https://supabase.com/docs/guides/storage/buckets/fundamentals>
+
+
+## Included
 - Email/password sign-up, sign-in and password reset.
 - Student profile with education details and CV text.
 - Private PDF, DOC and DOCX uploads up to 10 MB, with download and delete.
