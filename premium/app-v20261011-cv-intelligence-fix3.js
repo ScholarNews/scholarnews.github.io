@@ -471,20 +471,23 @@ function buildProfessionalCoverLetter(v){
  if(/\bindependent researcher\b/i.test(all))roleParts.push("independent researcher");
  if(/\bresearch assistant professor\b/i.test(all))roleParts.push("Research Assistant Professor");
  let researchParagraph="";
- if(methods.length){
-  const roleDescriptor=roleParts.length===2?"an independent researcher and Research Assistant Professor":roleParts[0]?.toLowerCase()==="independent researcher"?"an independent researcher":roleParts.length?"a Research Assistant Professor":"";
-  if(roleDescriptor){
-   researchParagraph="In recent appointments as "+roleDescriptor+", I have developed a research profile that connects "+methods.slice(0,2).join(" with ")+(methods.length>2?", alongside "+methods[2]:"")+".";
-  }else{
-   researchParagraph="My research brings together "+methods.slice(0,2).join(" and ")+(methods.length>2?", with further work in "+methods[2]:"")+".";
-  }
- }else if(roleParts.length){
-  researchParagraph="In recent appointments as "+(roleParts.length===2?"an independent researcher and Research Assistant Professor":roleParts[0].toLowerCase()==="independent researcher"?"an independent researcher":"a Research Assistant Professor")+", I have contributed to independent and collaborative research while developing a broader academic profile.";
+ const roleDescriptor=roleParts.length===2?"an independent researcher and Research Assistant Professor":roleParts[0]?.toLowerCase()==="independent researcher"?"an independent researcher":roleParts.length?"a Research Assistant Professor":"";
+ if(hasNano&&hasComp){
+  researchParagraph=(roleDescriptor?"In recent appointments as "+roleDescriptor+", I have ":"My research has ")+(roleDescriptor?"connected":"brought together")+" experimental work on nanotechnology-based formulations and drug delivery with computational drug discovery, including molecular simulation, docking and QSAR.";
+ }else if(hasComp){
+  researchParagraph=(roleDescriptor?"In recent appointments as "+roleDescriptor+", I have focused on":"My work has focused on")+" computational drug discovery, including molecular simulation, docking and QSAR.";
+ }else if(hasNano){
+  researchParagraph=(roleDescriptor?"In recent appointments as "+roleDescriptor+", I have worked on":"My research has focused on")+" nanotechnology-based formulations and drug delivery, with an emphasis on their biomedical applications.";
+ }else if(methods.length){
+  researchParagraph="My research brings together "+methods.slice(0,2).join(" and ")+(methods.length>2?", with further work in "+methods[2]:"")+".";
+ }else if(roleDescriptor){
+  researchParagraph="In recent appointments as "+roleDescriptor+", I have contributed to independent and collaborative research while developing a broader academic profile.";
  }else{
   researchParagraph="My research experience has strengthened my ability to assess scientific questions carefully, work across related methods and communicate findings to research audiences.";
  }
+ if(hasAI)researchParagraph+=" I have also worked with machine-learning models to support biomedical analysis and discovery.";
  if(hasNetwork&&hasCancer)researchParagraph+=" In particular, I have used protein-interaction analysis and GO/KEGG pathway enrichment to investigate potential anticancer mechanisms, connecting computational findings with biologically relevant therapeutic questions.";
- else if(hasNetwork)researchParagraph+=" I have applied these approaches to examine molecular interactions and biological pathways in disease-related research.";
+ else if(hasNetwork)researchParagraph+=" I have applied network pharmacology and pathway analysis to examine molecular interactions in disease-related research.";
  paragraphs.push(researchParagraph);
  const hasPublication=/published\s+\d+\s+research articles|peer-reviewed|book chapters|publications/i.test(all)||Boolean((sections["publications"]||[]).length);
  const hasReviewer=/reviewed publications|member of reviewers|journal reviewing|peer-reviewed certificate|reviewer(?:s)? committee/i.test(all);
@@ -524,10 +527,12 @@ function buildProfessionalCoverLetter(v){
  if(hasAI)evidenceFocus.push("machine-learning analysis");
  let fit="";
  if(targets.length){
-  const targetText=targets.length===1?targets[0]:targets.length===2?targets[0]+" and "+targets[1]:targets.slice(0,-1).join(", ")+", and "+targets[targets.length-1];
-  fit="The emphasis on "+targetText+" is particularly compelling because my experience connects "+(evidenceFocus.length?evidenceFocus.slice(0,2).join(" with "):"biochemistry with computational analysis")+" to biomedical questions.";
+  const selectedTargets=targets.slice(0,3);
+  const targetText=selectedTargets.length===1?selectedTargets[0]:selectedTargets.length===2?selectedTargets[0]+" and "+selectedTargets[1]:selectedTargets.slice(0,-1).join(", ")+", and "+selectedTargets[selectedTargets.length-1];
+  const experienceText=evidenceFocus.length>=2?"my experience combining "+evidenceFocus.slice(0,2).join(" with "):evidenceFocus.length===1?"my background in "+evidenceFocus[0]:"my background in biochemistry and computational analysis";
+  fit="The search's emphasis on "+targetText+" aligns closely with "+experienceText+" in support of biomedical research.";
  }else if(evidenceFocus.length){
-  fit="I am keen to bring my experience in "+evidenceFocus.slice(0,2).join(" and ")+" to this opportunity and to contribute to the research priorities of "+institution+".";
+  fit="I am keen to apply my background in "+evidenceFocus.slice(0,2).join(" and ")+" to this opportunity and contribute to the research priorities of "+institution+".";
  }else{
   fit="I am interested in the opportunity to contribute my research experience to "+title+" at "+institution+".";
  }
