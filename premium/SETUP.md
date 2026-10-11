@@ -80,6 +80,13 @@ select id, name, public from storage.buckets where id = 'student-cvs';
 The result must show `public = false`. Private buckets require authenticated access policies and signed URLs for downloads. <https://supabase.com/docs/guides/storage/buckets/fundamentals>
 
 
+## CV extraction and reusable document profile
+
+Under **Profile → CV Vault**, uploading a text-based PDF or a DOCX extracts its readable text inside the browser and saves that text to the student's private profile. A rule-based pass suggests common details such as name, institution, education level and discipline when detected. The applicant can review/edit those fields and the extracted CV text in the profile form. The Application Studio then pre-fills applicant details and a compact evidence extract for cover/motivation letters, academic emails, statements, CV tailoring and eligibility checklists.
+
+Text is extracted locally in the browser; the original file is uploaded to the private `student-cvs` bucket. PDF files that are scans/images without selectable text need OCR or a text-based copy. Legacy Word `.doc` files are stored but not parsed by this browser-only version; save them as PDF or `.docx` first. This version organizes and reuses CV text but does not use a hosted AI model to independently validate credentials. Check every detected fact, personalize motivation statements, correct the working draft and submit only through the official opportunity provider.
+
+
 ## Included
 - Email/password sign-up, sign-in and password reset.
 - Student profile with education details and CV text.
