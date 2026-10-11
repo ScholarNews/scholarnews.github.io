@@ -11,7 +11,7 @@ const tools = {
  email:{title:"Academic email",desc:"Draft a professional supervisor inquiry, application message, referee request or follow-up.",icon:"＠",fields:[["purpose","Email purpose","select",""],["name","Your name","text",""],["recipient","Recipient name / title","text","Professor / Dr / Hiring committee"],["institution","Institution / organization","text",""],["title","Opportunity / subject","text",""],["description","What do you need to say or ask?","textarea","Add accurate context and specific questions"],["profile","Brief relevant background","textarea","Your experience and reason for writing"]]},
  statement:{title:"Academic statement",desc:"Organize a statement of purpose, research statement, teaching statement or letter of intent.",icon:"✎",fields:[["kind","Statement type","select",""],["name","Your name","text",""],["title","Program / opportunity","text",""],["institution","Institution","text",""],["description","Official aims / selection criteria","textarea","Paste relevant program details"],["profile","Relevant academic / professional evidence","textarea","Research, teaching, projects, publications and achievements"],["goals","Interests and future goals","textarea","Specific interests, approach and plans"]]}
 };
-let db=null, user=null, selected=null, activeTool="cover", apps=[], drafts=[], profile={}, cvFiles=[], authMode="signin", recoveryMode=false, activeDraftKey="", activeDraftTitle="", toastTimer=null, pendingAutoTrack=false;
+let db=null, user=null, selected=null, activeTool="cover", apps=[], drafts=[], profile={}, cvFiles=[], authMode="signin", recoveryMode=false, activeDraftKey="", activeDraftTitle="", toastTimer=null, pendingAutoTrack=false, sessionGeneration=0;
 const trim=v=>String(v==null?"":v).trim();
 function decodeHTMLEntities(value){const node=document.createElement("textarea");node.innerHTML=String(value==null?"":value);return node.value;}
 function cleanOfficialText(value){
@@ -425,19 +425,54 @@ async function persistApplication(record){if(!requireReady()||!requireUser())ret
 async function autoTrack(){if(!pendingAutoTrack||!user||!selected)return;pendingAutoTrack=false;const r=currentOpportunity();if(r.title)await persistApplication(r);else toast("Open an opportunity from the listings first.",true);}
 async function saveSelected(){if(!selected){goView("applications");$("manualAppForm").hidden=false;toast("Add the opportunity details in the tracker.");return;}const saved=await persistApplication(currentOpportunity());if(saved)goView("applications");}
 async function saveDraft(){if(!requireReady()||!requireUser())return;const content=trim($("outputText").value);if(!content){toast("Generate or enter a draft first.",true);return;}const v=vals(),title=trim(v.title||activeDraftTitle||currentOpportunity().title||tools[activeTool].title),key=activeDraftKey||(oppKey(selected)||("manual:"+activeTool));const payload={user_id:user.id,opportunity_key:key.slice(0,450),tool:activeTool,title:title.slice(0,500),content:content.slice(0,60000),updated_at:new Date().toISOString()};const {error}=await db.from("drafts").upsert(payload,{onConflict:"user_id,tool,opportunity_key"});if(error){status("draftSaveStatus","Could not save draft: "+error.message,"error");return;}status("draftSaveStatus","Draft saved to your signed-in account.","success");activeDraftTitle=title;toast("Draft saved to your account.");await loadDrafts();}
-async function loadApps(){if(!user||!db)return;const {data,error}=await db.from("applications").select("*").order("deadline",{ascending:true,nullsFirst:false}).order("updated_at",{ascending:false});if(error){const missing=/PGRST205|schema cache|could not find the table|relation .*applications.* does not exist/i.test((error.code||"")+" "+(error.message||""));toast(missing?"The application tracker table is missing from this Supabase project. Run the complete supabase/schema.sql (not only fix-cv-storage.sql) in this project’s SQL Editor, then reload the schema cache with NOTIFY pgrst, 'reload schema';.": "Could not load tracker: "+error.message,true);return;}apps=data||[];renderApps();updateStats();await loadDrafts();}
-async function loadDrafts(){if(!user||!db)return;const {data,error}=await db.from("drafts").select("*").order("updated_at",{ascending:false});if(error){toast("Could not load saved drafts: "+error.message,true);return;}drafts=data||[];renderDrafts();}
+async function loadApps(){
+ if(!user||!db)return;
+ const ownerId=user.id;
+ const {data,error}=await db.from("applications").select("*").eq("user_id",ownerId).order("deadline",{ascending:true,nullsFirst:false}).order("updated_at",{ascending:false});
+ if(!user||user.id!==ownerId)return;
+ if(error){const missing=/PGRST205|schema cache|could not find the table|relation .*applications.* does not exist/i.test((error.code||"")+" "+(error.message||""));toast(missing?"The application tracker table is missing from this Supabase project. Run the complete supabase/schema.sql (not only fix-cv-storage.sql) in this project’s SQL Editor, then reload the schema cache with NOTIFY pgrst, 'reload schema';.":"Could not load tracker: "+error.message,true);return;}
+ apps=data||[];renderApps();updateStats();await loadDrafts();
+}
+async function loadDrafts(){
+ if(!user||!db)return;
+ const ownerId=user.id;
+ const {data,error}=await db.from("drafts").select("*").eq("user_id",ownerId).order("updated_at",{ascending:false});
+ if(!user||user.id!==ownerId)return;
+ if(error){toast("Could not load saved drafts: "+error.message,true);return;}
+ drafts=data||[];renderDrafts();
+}
 function renderDrafts(){const box=$("savedDraftsList");if(!box)return;$("draftCount").textContent=drafts.length;box.innerHTML=drafts.length?drafts.map(d=>'<article class="saved-draft-row"><div class="saved-draft-copy"><strong>'+esc(d.title||"Untitled draft")+'</strong><small>'+esc((tools[d.tool]?.title||d.tool)+" · Updated "+new Date(d.updated_at||d.created_at).toLocaleDateString())+'</small></div><div class="saved-draft-actions"><button type="button" data-open-draft="'+esc(d.id)+'">Continue editing</button><button type="button" data-delete-draft="'+esc(d.id)+'">Delete</button></div></article>').join(""):'<p class="empty-note">'+(user?"No saved drafts yet. Generate a draft and choose Save to my account.":"Sign in to view drafts saved to your account.")+'</p>';}
 function openDraft(id){const draft=drafts.find(d=>String(d.id)===String(id));if(!draft)return;renderTool(draft.tool);activeDraftKey=draft.opportunity_key;activeDraftTitle=draft.title||"";$("outputText").value=draft.content||"";$("outputTitle").textContent="Saved "+(tools[draft.tool]?.title||"application")+" draft";$("toolOutput").hidden=false;status("draftSaveStatus","Loaded saved draft. Continue editing, then save your changes.");$("toolOutput").scrollIntoView({behavior:"smooth",block:"start"});}
 async function deleteDraft(id){if(!requireUser()||!confirm("Delete this saved draft from your account?"))return;const {error}=await db.from("drafts").delete().eq("id",id);if(error){toast("Could not delete draft: "+error.message,true);return;}await loadDrafts();toast("Draft deleted.");}
 function renderApps(){const q=trim($("applicationSearch").value).toLowerCase(),f=trim($("applicationStatusFilter").value),rows=apps.filter(a=>(!f||a.status===f)&&(!q||(a.title+" "+(a.institution||"")).toLowerCase().includes(q)));$("navAppCount").textContent=apps.length;$("applicationsList").innerHTML=rows.length?rows.map(a=>'<article class="application-row"><div><div class="application-statusline"><span class="status-pill status-'+esc(a.status)+'">'+esc(statusLabels[a.status]||a.status)+'</span>'+(a.deadline?'<span class="status-pill">'+(a.deadline<new Date().toISOString().slice(0,10)?"Deadline passed":"Deadline "+esc(a.deadline))+'</span>':"")+'</div><h3>'+esc(a.title)+'</h3><p>'+esc(a.institution||"Institution not specified")+'</p><div class="application-meta"><small>Updated '+esc(new Date(a.updated_at||a.created_at).toLocaleDateString())+'</small>'+(safeHTTP(a.official_url)?'<a href="'+esc(safeHTTP(a.official_url))+'" target="_blank" rel="noopener">Official listing ↗</a>':"")+'</div></div><div class="application-row-actions"><label class="sr-only" for="appstatus-'+esc(a.id)+'">Application status</label><select id="appstatus-'+esc(a.id)+'" data-app-status="'+esc(a.id)+'">'+Object.entries(statusLabels).map(([k,v])=>'<option value="'+k+'" '+(a.status===k?"selected":"")+'>'+v+'</option>').join("")+'</select><button data-edit-app="'+esc(a.id)+'" type="button">Edit notes</button><button data-remove-app="'+esc(a.id)+'" type="button">Remove</button></div></article>').join(""):'<div class="empty-state"><span>▣</span><h3>'+(user?"No matching applications yet.":"Sign in to open your personal tracker.")+'</h3><p>'+(user?"Use Apply with Scholar News or add an application manually.":"Your tracker is private and linked to your student account.")+'</p><button class="desk-primary" data-view="'+(user?"dashboard":"account")+'">'+(user?"Back to workspace":"Sign in / create account")+" →</button></div>";}
 function updateStats(){const today=new Date().toISOString().slice(0,10);$("statApplicationCount").textContent=apps.length;$("statSubmittedCount").textContent=apps.filter(a=>["submitted","interview","offer"].includes(a.status)).length;$("statUpcomingCount").textContent=apps.filter(a=>a.deadline&&a.deadline>=today&&!["submitted","offer","rejected","withdrawn"].includes(a.status)).length;}
-async function updateAppStatus(id,next){if(!requireUser())return;const {error}=await db.from("applications").update({status:next,updated_at:new Date().toISOString()}).eq("id",id);if(error){toast("Status not updated: "+error.message,true);return;}await loadApps();toast("Application status updated.");}
-async function removeApp(id){if(!requireUser()||!confirm("Remove this application from your tracker? This does not contact the host institution."))return;const {error}=await db.from("applications").delete().eq("id",id);if(error){toast("Could not remove application: "+error.message,true);return;}await loadApps();toast("Application removed.");}
-async function editNotes(id){const a=apps.find(x=>x.id===id);if(!a)return;const notes=prompt("Private notes for "+a.title+":",a.notes||"");if(notes===null)return;const {error}=await db.from("applications").update({notes:notes,updated_at:new Date().toISOString()}).eq("id",id);if(error)toast("Could not save notes: "+error.message,true);else{await loadApps();toast("Notes saved.");}}
-async function loadProfile(){
+async function updateAppStatus(id,next){
+ if(!requireUser())return;const ownerId=user.id;
+ const {error}=await db.from("applications").update({status:next,updated_at:new Date().toISOString()}).eq("user_id",ownerId).eq("id",id);
+ if(!user||user.id!==ownerId)return;
+ if(error){toast("Status not updated: "+error.message,true);return;}
+ await loadApps();toast("Application status updated.");
+}
+async function removeApp(id){
+ if(!requireUser()||!confirm("Remove this application from your tracker? This does not contact the host institution."))return;const ownerId=user.id;
+ const {error}=await db.from("applications").delete().eq("user_id",ownerId).eq("id",id);
+ if(!user||user.id!==ownerId)return;
+ if(error){toast("Could not remove application: "+error.message,true);return;}
+ await loadApps();toast("Application removed.");
+}
+async function editNotes(id){
+ if(!requireUser())return;
+ const ownerId=user.id,a=apps.find(x=>x.id===id&&x.user_id===ownerId);if(!a)return;
+ const notes=prompt("Private notes for "+a.title+":",a.notes||"");if(notes===null)return;
+ const {error}=await db.from("applications").update({notes:notes,updated_at:new Date().toISOString()}).eq("user_id",ownerId).eq("id",id);
+ if(!user||user.id!==ownerId)return;
+ if(error)toast("Could not save notes: "+error.message,true);else{await loadApps();toast("Notes saved.");}
+}
+async function loadProfile(force=false){
  if(!user||!db)return;
- const {data,error}=await db.from("profiles").select("*").eq("user_id",user.id).maybeSingle();
+ const ownerId=user.id;
+ const {data,error}=await db.from("profiles").select("*").eq("user_id",ownerId).maybeSingle();
+ if(!user||user.id!==ownerId)return;
  if(error){status("profileSaveStatus","Could not load profile: "+error.message,"error");return;}
  profile=data||{};
  if(profile.cv_text){
@@ -447,15 +482,17 @@ async function loadProfile(){
   if(cleaned!==profile.cv_text)patch.cv_text=cleaned;
   if(!trim(profile.country)&&facts.country)patch.country=facts.country;
   if(Object.keys(patch).length){
-   const {error:patchError}=await db.from("profiles").update({...patch,updated_at:new Date().toISOString()}).eq("user_id",user.id);
+   const {error:patchError}=await db.from("profiles").update({...patch,updated_at:new Date().toISOString()}).eq("user_id",ownerId);
+   if(!user||user.id!==ownerId)return;
    profile={...profile,...patch};
    if(patchError)console.warn("Could not persist cleaned CV text/profile country",patchError.message);
   }
  }
  const map={profileName:"full_name",profileEmail:"email",profileCountry:"country",profileInstitution:"institution",profileLevel:"education_level",profileDiscipline:"discipline",profileCVText:"cv_text"};
- Object.entries(map).forEach(([id,key])=>{if(document.activeElement!==$(id))$(id).value=profile[key]||"";});
- if(!$("profileEmail").value)$("profileEmail").value=user.email||"";
+ Object.entries(map).forEach(([id,key])=>{if(force||document.activeElement!==$(id))$(id).value=profile[key]||"";});
+ if(force||!$("profileEmail").value)$("profileEmail").value=profile.email||user.email||"";
  await loadCVFiles();
+ if(!user||user.id!==ownerId)return;
  prefillActiveToolFromProfile();
 }
 async function saveProfile(e){e.preventDefault();if(!requireReady()||!requireUser())return;const payload={user_id:user.id,email:(trim($("profileEmail").value)||profile.email||user.email).slice(0,320),full_name:trim($("profileName").value).slice(0,200),country:trim($("profileCountry").value).slice(0,120),institution:trim($("profileInstitution").value).slice(0,300),education_level:trim($("profileLevel").value).slice(0,100),discipline:trim($("profileDiscipline").value).slice(0,300),cv_text:trim($("profileCVText").value).slice(0,60000),updated_at:new Date().toISOString()};const {error}=await db.from("profiles").upsert(payload);if(error){status("profileSaveStatus","Could not save profile: "+error.message,"error");return;}profile=payload;status("profileSaveStatus","Your profile is saved to your account.","success");toast("Profile saved.");}
@@ -503,45 +540,112 @@ async function uploadCV(e){
   $("profileCVText").scrollIntoView({behavior:"smooth",block:"center"});
   toast(profileSaveError?"CV text extracted; please save it to your profile.":"CV uploaded and reusable profile updated.");
  }else toast("CV uploaded to private storage.");
-}async function loadCVFiles(){if(!user||!db)return;const {data,error}=await db.from("cv_files").select("*").order("uploaded_at",{ascending:false});if(error){status("cvUploadStatus","Could not list CV files: "+error.message,"error");return;}cvFiles=data||[];$("cvFileCount").textContent=cvFiles.length;$("cvFileList").innerHTML=cvFiles.length?cvFiles.map(f=>'<div class="cv-file-row"><div class="cv-file-meta"><strong title="'+esc(f.original_filename)+'">'+esc(f.original_filename)+'</strong><small>'+esc((f.size_bytes/1024/1024).toFixed(2))+' MB · '+esc(new Date(f.uploaded_at).toLocaleDateString())+'</small></div><button data-cv-download="'+esc(f.storage_path)+'" type="button">Download</button><button data-cv-delete="'+esc(f.storage_path)+'" type="button">Delete</button></div>').join(""):'<p class="empty-note">No CV files saved yet. Upload a PDF, DOC or DOCX to keep a private copy.</p>';}
-async function downloadCV(path){if(!requireUser())return;const {data,error}=await db.storage.from("student-cvs").createSignedUrl(path,60);if(error){toast("Cannot create private download link: "+error.message,true);return;}window.open(data.signedUrl,"_blank","noopener");}
-async function deleteCV(path){if(!requireUser()||!confirm("Delete this CV file from your private vault?"))return;const {error:e1}=await db.storage.from("student-cvs").remove([path]);if(e1){toast("File could not be deleted: "+e1.message,true);return;}const {error:e2}=await db.from("cv_files").delete().eq("storage_path",path);if(e2){toast("CV record could not be removed: "+e2.message,true);return;}await loadCVFiles();toast("CV file deleted.");}
-function syncAuth(){const signed=Boolean(user);$("passwordRecovery").hidden=!recoveryMode;$("authSignedIn").hidden=!signed||recoveryMode;$("authSignedOut").hidden=signed||recoveryMode;$("accountNavButton").textContent=signed?"My account":"Sign in";$("connectionStatus").innerHTML='<i></i> '+(signed?"Signed in":isReady()?"Not signed in":"Account setup needed");$("connectionStatus").classList.toggle("ready",signed);$("connectionStatus").classList.toggle("offline",!isReady());$("authSetupInline").hidden=isReady();$("setupNotice").hidden=isReady();if(recoveryMode)return;if(signed){$("signedInName").textContent=profile.full_name||user.user_metadata?.full_name||"Your account";$("signedInEmail").textContent=user.email||"";$("userGreeting").textContent="Welcome back"+(profile.full_name?" "+profile.full_name.split(/\s+/)[0]:"")+". Ready for your next move?";}else{$("userGreeting").textContent="A clearer path to your next move.";}}
-async function onAuthChanged(nextUser){user=nextUser||null;if(user){await loadProfile();await loadApps();syncAuth();if(pendingAutoTrack)await autoTrack();}else{apps=[];drafts=[];profile={};cvFiles=[];renderApps();renderDrafts();updateStats();syncAuth();}}
+}async function loadCVFiles(){
+ if(!user||!db)return;
+ const ownerId=user.id;
+ const {data,error}=await db.from("cv_files").select("*").eq("user_id",ownerId).order("uploaded_at",{ascending:false});
+ if(!user||user.id!==ownerId)return;
+ if(error){status("cvUploadStatus","Could not list CV files: "+error.message,"error");return;}
+ cvFiles=data||[];
+ $("cvFileCount").textContent=cvFiles.length;
+ $("cvFileList").innerHTML=cvFiles.length?cvFiles.map(f=>'<div class="cv-file-row"><div class="cv-file-meta"><strong title="'+esc(f.original_filename)+'">'+esc(f.original_filename)+'</strong><small>'+esc((f.size_bytes/1024/1024).toFixed(2))+' MB · '+esc(new Date(f.uploaded_at).toLocaleDateString())+'</small></div><button data-cv-download="'+esc(f.storage_path)+'" type="button">Download</button><button data-cv-delete="'+esc(f.storage_path)+'" type="button">Delete</button></div>').join(""):'<p class="empty-note">No CV files saved yet. Upload a PDF, DOC or DOCX to keep a private copy.</p>';
+}
+async function downloadCV(path){
+ if(!requireUser())return;
+ if(!String(path||"").startsWith(user.id+"/")){toast("This CV file does not belong to the signed-in account.",true);return;}
+ const {data,error}=await db.storage.from("student-cvs").createSignedUrl(path,60);
+ if(!user||!path.startsWith(user.id+"/"))return;
+ if(error){toast("Cannot create private download link: "+error.message,true);return;}
+ window.open(data.signedUrl,"_blank","noopener");
+}
+async function deleteCV(path){
+ if(!requireUser()||!confirm("Delete this CV file from your private vault?"))return;
+ const ownerId=user.id;
+ if(!String(path||"").startsWith(ownerId+"/")){toast("This CV file does not belong to the signed-in account.",true);return;}
+ const {error:e1}=await db.storage.from("student-cvs").remove([path]);
+ if(!user||user.id!==ownerId)return;
+ if(e1){toast("File could not be deleted: "+e1.message,true);return;}
+ const {error:e2}=await db.from("cv_files").delete().eq("user_id",ownerId).eq("storage_path",path);
+ if(!user||user.id!==ownerId)return;
+ if(e2){toast("CV record could not be removed: "+e2.message,true);return;}
+ await loadCVFiles();toast("CV file deleted.");
+}
+function syncAuth(){
+ const signed=Boolean(user);
+ $("passwordRecovery").hidden=!recoveryMode;
+ $("authSignedIn").hidden=!signed||recoveryMode;
+ $("authSignedOut").hidden=signed||recoveryMode;
+ $("accountNavButton").hidden=signed&&!recoveryMode;
+ $("accountNavButton").textContent=signed?"My account":"Sign in";
+ $("deskAccountMenuWrap").hidden=!signed||recoveryMode;
+ if(signed){
+  const displayName=profile.full_name||user.user_metadata?.full_name||user.email||"Student account";
+  $("deskAccountMenuName").textContent=displayName;
+  $("deskAccountMenuEmail").textContent=user.email||"";
+  $("deskAccountMenuAvatar").textContent=trim(displayName).charAt(0).toUpperCase()||"S";
+ }
+ $("connectionStatus").innerHTML='<i></i> '+(signed?"Signed in":isReady()?"Not signed in":"Account setup needed");
+ $("connectionStatus").classList.toggle("ready",signed);
+ $("connectionStatus").classList.toggle("offline",!isReady());
+ $("authSetupInline").hidden=isReady();$("setupNotice").hidden=isReady();
+ if(recoveryMode){$("deskAccountMenuPopover").hidden=true;return;}
+ if(signed){$("signedInName").textContent=profile.full_name||user.user_metadata?.full_name||"Your account";$("signedInEmail").textContent=user.email||"";$("userGreeting").textContent="Welcome back"+(profile.full_name?" "+profile.full_name.split(/\s+/)[0]:"")+". Ready for your next move?";}
+ else{$("userGreeting").textContent="A clearer path to your next move.";$("deskAccountMenuPopover").hidden=true;}
+}
+async function onAuthChanged(nextUser){
+ const incoming=nextUser||null;
+ const previousId=user?.id||"",nextId=incoming?.id||"";
+ const accountChanged=previousId!==nextId;
+ const generation=++sessionGeneration;
+ user=incoming;
+ if(accountChanged)clearPrivateWorkspaceUI();
+ if(!user){
+  apps=[];drafts=[];profile={};cvFiles=[];
+  renderApps();renderDrafts();updateStats();syncAuth();
+  return;
+ }
+ await loadProfile(accountChanged);
+ if(generation!==sessionGeneration||!user||user.id!==nextId)return;
+ await loadApps();
+ if(generation!==sessionGeneration||!user||user.id!==nextId)return;
+ syncAuth();
+ if(pendingAutoTrack)await autoTrack();
+}
+function clearPrivateWorkspaceUI(){
+ profile={};apps=[];drafts=[];cvFiles=[];
+ const profileIds=["profileName","profileEmail","profileCountry","profileInstitution","profileLevel","profileDiscipline","profileCVText"];
+ profileIds.forEach(id=>{const el=$(id);if(el)el.value="";});
+ if($("profileForm"))$("profileForm").reset();
+ $("cvFileCount").textContent="0";
+ $("cvFileList").innerHTML='<p class="empty-note">Sign in to view your private CV files.</p>';
+ $("cvFile").value="";
+ ["profileSaveStatus","cvUploadStatus"].forEach(id=>{if($(id))$(id).textContent="";});
+ if($("toolFields"))$("toolFields").querySelectorAll("input,textarea,select").forEach(el=>{if(el.tagName==="SELECT")el.selectedIndex=0;else el.value="";delete el.dataset.snSuggestionText;delete el.dataset.snSuggestionStart;});
+ if($("outputText"))$("outputText").value="";
+ if($("toolOutput"))$("toolOutput").hidden=true;
+ if($("deskAccountMenuPopover"))$("deskAccountMenuPopover").hidden=true;
+ if($("deskAccountMenuToggle"))$("deskAccountMenuToggle").setAttribute("aria-expanded","false");
+ renderApps();renderDrafts();updateStats();
+}
 function authErrorMessage(error){
  const message=trim(error&&error.message||error)||"The authentication request failed.";
  const lower=message.toLowerCase();
+ if(lower.includes("email not confirmed")||lower.includes("email_not_confirmed")||lower.includes("email confirmation")){
+  return "This account was created but its email address has not been confirmed yet. Open the confirmation email, or use “Resend confirmation email” below. If no email arrives, check Supabase Authentication settings and configure a trusted SMTP sender.";
+ }
  if(lower.includes("email rate limit exceeded")||(/rate.?limit/.test(lower)&&lower.includes("email"))||lower.includes("too many requests"))
   return "Supabase has temporarily rate-limited authentication emails. Please stop retrying and wait for the limit to reset. For reliable email delivery, configure a custom SMTP provider in Supabase Authentication settings. If you already have an account, use Sign in instead of creating another one.";
  if(lower.includes("redirect")&&(/url|allow|whitelist/.test(lower)))
   return "Supabase rejected the redirect URL. In Authentication → URL Configuration, allow "+location.origin+"/premium/ and try again.";
  if(lower.includes("invalid login credentials"))
-  return "Email or password is incorrect. If you cannot remember your password, choose Forgot password? and use the newest reset email.";
+  return "Email or password is incorrect. Check for typos; if the account was just created, it may still need email confirmation. Use Forgot password? if you have forgotten the password.";
  if(lower.includes("user already registered")||lower.includes("already been registered"))
   return "An account may already exist for this email. Switch to Sign in or use Forgot password? rather than registering again.";
  if(lower.includes("expired")||lower.includes("invalid token")||lower.includes("otp"))
   return "This password-reset link is invalid or expired. Request one new reset email and open its latest link.";
  return message;
 }
-async function authSubmit(e){
- e.preventDefault();if(!requireReady())return;
- const email=trim($("authEmail").value),password=$("authPassword").value;
- if(!email){status("authStatus","Enter your email address first.","error");return;}
- if(password.length<8){status("authStatus","Use a password with at least 8 characters.","error");return;}
- const button=$("authSubmit");button.disabled=true;
- status("authStatus",authMode==="signup"?"Creating your account…":"Signing in…");
- try{
-  const result=authMode==="signup"
-   ?await db.auth.signUp({email,password,options:{data:{full_name:trim($("authName").value)},emailRedirectTo:new URL("./",location.href).href}})
-   :await db.auth.signInWithPassword({email,password});
-  if(result.error){status("authStatus",authErrorMessage(result.error),"error");return;}
-  if(authMode==="signup"&&!result.data.session){
-   status("authStatus","Sign-up request accepted. Check your inbox and spam folder for a confirmation email before signing in. If no email arrives and Supabase reports a rate limit, stop requesting emails and configure custom SMTP.","success");return;
-  }
-  await onAuthChanged(result.data.user);status("authStatus","Signed in successfully.","success");goView("dashboard");toast(authMode==="signup"?"Welcome to Scholar News.":"Welcome back.");
- }catch(error){status("authStatus",authErrorMessage(error),"error");}
- finally{button.disabled=false;}
-}
+fn=>fn
 async function resetPassword(){
  if(!requireReady())return;
  const email=trim($("authEmail").value);
@@ -575,7 +679,25 @@ async function cancelPasswordRecovery(){
  await onAuthChanged(null);syncAuth();goView("account");
  status("authStatus","Password reset cancelled. You can sign in or request a new reset link.","success");
 }
-function changeAuth(mode){authMode=mode==="signup"?"signup":"signin";document.querySelectorAll("[data-auth-mode]").forEach(b=>b.classList.toggle("active",b.dataset.authMode===authMode));$("authTitle").textContent=authMode==="signup"?"Create your student account.":"Welcome back.";$("authIntro").textContent=authMode==="signup"?"Create an account to keep your private CV and application records together.":"Sign in to continue with your application workspace.";$("authNameWrap").hidden=authMode!=="signup";$("authSubmit").textContent=!isReady()?"Account setup required":(authMode==="signup"?"Create account →":"Sign in securely →");$("authPassword").autocomplete=authMode==="signup"?"new-password":"current-password";status("authStatus",isReady()?"":"The account service has not been configured, so real sign-up and sign-in cannot run yet. Open the setup guide below.","error");}
+async function resendSignupConfirmation(){
+ if(!requireReady())return;
+ const email=trim($("authEmail").value);
+ if(!email){status("authStatus","Enter the email address used to create your account first.","error");$("authEmail").focus();return;}
+ const button=$("resendConfirmationButton");button.disabled=true;status("authStatus","Requesting a confirmation email…");
+ try{
+  const {error}=await db.auth.resend({type:"signup",email,options:{emailRedirectTo:new URL("./",location.href).href}});
+  if(error){status("authStatus",authErrorMessage(error),"error");return;}
+  status("authStatus","If the account still needs confirmation, Supabase has been asked to send a new confirmation email. Check your inbox and spam folder. If no message arrives, verify your Supabase Site URL/Redirect URLs and configure SMTP. Avoid repeated requests because of rate limits.","success");
+ }catch(error){status("authStatus",authErrorMessage(error),"error");}
+ finally{button.disabled=false;}
+}
+async function signOutUser(){
+ if(!db)return;
+ const {error}=await db.auth.signOut();
+ if(error){toast(error.message,true);return;}
+ await onAuthChanged(null);recoveryMode=false;goView("dashboard");toast("You have signed out.");
+}
+function changeAuth(mode){authMode=mode==="signup"?"signup":"signin";$("resendConfirmationButton").hidden=true;document.querySelectorAll("[data-auth-mode]").forEach(b=>b.classList.toggle("active",b.dataset.authMode===authMode));$("authTitle").textContent=authMode==="signup"?"Create your student account.":"Welcome back.";$("authIntro").textContent=authMode==="signup"?"Create an account to keep your private CV and application records together.":"Sign in to continue with your application workspace.";$("authNameWrap").hidden=authMode!=="signup";$("authSubmit").textContent=!isReady()?"Account setup required":(authMode==="signup"?"Create account →":"Sign in securely →");$("authPassword").autocomplete=authMode==="signup"?"new-password":"current-password";status("authStatus",isReady()?"":"The account service has not been configured, so real sign-up and sign-in cannot run yet. Open the setup guide below.","error");}
 function initAuth(){if(!isReady()){$("setupNotice").hidden=false;$("authSetupInline").hidden=false;$("connectionStatus").innerHTML="<i></i> Account setup needed";$("connectionStatus").classList.add("offline");$("authSubmit").disabled=false;$("authSubmit").title="Account creation requires Supabase configuration; see SETUP.md";status("authStatus","Real account creation is not active yet. Configure the Supabase project URL and public key using the setup guide below, then reload this page.","error");return;}db=window.supabase.createClient(cfg.url,cfg.anonKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});db.auth.onAuthStateChange((event,session)=>{setTimeout(async()=>{if(event==="PASSWORD_RECOVERY")recoveryMode=true;try{await onAuthChanged(session?.user||null);if(event==="PASSWORD_RECOVERY"){recoveryMode=true;syncAuth();goView("account");status("recoveryStatus","Reset link verified. Choose a new password below.","success");}}catch(e){toast(e.message||"Account session could not be loaded.",true);}},0);});db.auth.getSession().then(({data,error})=>{if(error)toast(error.message,true);return onAuthChanged(data.session?.user||null);}).catch(e=>toast("Account connection failed: "+e.message,true));}
 function bind(){ $("toolFields").addEventListener("click",event=>{
  const option=event.target.closest("[data-motivation-option]");
@@ -597,7 +719,12 @@ function bind(){ $("toolFields").addEventListener("click",event=>{
   panel.hidden=true;button.classList.remove("active");button.setAttribute("aria-expanded","false");return;
  }
  renderMotivationOptions(wrap,button.dataset.motivationSuggestion);
-});document.querySelectorAll("[data-view]").forEach(b=>b.addEventListener("click",()=>goView(b.dataset.view)));document.querySelectorAll("[data-tool]").forEach(b=>b.addEventListener("click",()=>renderTool(b.dataset.tool)));$("toolForm").addEventListener("submit",generate);$("saveDraftButton").addEventListener("click",saveDraft);$("trackCurrentButton").addEventListener("click",saveSelected);$("copyDraftButton").addEventListener("click",async()=>{try{await navigator.clipboard.writeText($("outputText").value);toast("Draft copied.");}catch{$("outputText").select();toast("Select the text and copy it manually.");}});$("downloadDraftButton").addEventListener("click",()=>{const blob=new Blob([$("outputText").value],{type:"text/plain;charset=utf-8"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=safeFileName(($("field-title")?.value||activeTool)+"-scholar-news-draft")+".txt";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);});$("authForm").addEventListener("submit",authSubmit);document.querySelectorAll("[data-auth-mode]").forEach(b=>b.addEventListener("click",()=>changeAuth(b.dataset.authMode)));$("forgotPassword").addEventListener("click",resetPassword);$("recoveryForm").addEventListener("submit",changePassword);$("cancelRecovery").addEventListener("click",cancelPasswordRecovery);$("signOutButton").addEventListener("click",async()=>{if(db){const {error}=await db.auth.signOut();if(error)toast(error.message,true);else{await onAuthChanged(null);drafts=[];renderDrafts();recoveryMode=false;goView("dashboard");toast("You have signed out.");}}});$("profileForm").addEventListener("submit",saveProfile);$("cvUploadForm").addEventListener("submit",uploadCV);$("cvFileList").addEventListener("click",e=>{const d=e.target.closest("[data-cv-download]"),r=e.target.closest("[data-cv-delete]");if(d)downloadCV(d.dataset.cvDownload);if(r)deleteCV(r.dataset.cvDelete);});$("applicationsList").addEventListener("change",e=>{const el=e.target.closest("[data-app-status]");if(el)updateAppStatus(el.dataset.appStatus,el.value);});$("applicationsList").addEventListener("click",e=>{const rm=e.target.closest("[data-remove-app]"),ed=e.target.closest("[data-edit-app]");if(rm)removeApp(rm.dataset.removeApp);if(ed)editNotes(ed.dataset.editApp);});$("savedDraftsList").addEventListener("click",e=>{const open=e.target.closest("[data-open-draft]"),del=e.target.closest("[data-delete-draft]");if(open)openDraft(open.dataset.openDraft);if(del)deleteDraft(del.dataset.deleteDraft);});$("applicationSearch").addEventListener("input",renderApps);$("applicationStatusFilter").addEventListener("change",renderApps);$("addManualApplication").addEventListener("click",()=>{if(!requireUser())return;$("manualAppForm").hidden=!$("manualAppForm").hidden;});$("cancelManualApplication").addEventListener("click",()=>$("manualAppForm").hidden=true);$("manualAppForm").addEventListener("submit",async e=>{e.preventDefault();const title=trim($("manualTitle").value),institution=trim($("manualInstitution").value),record={title,institution,deadline:safeDeadline($("manualDeadline").value),official_url:trim($("manualUrl").value),opportunity_key:("manual:"+title+"|"+institution).slice(0,450),status:"interested"};const saved=await persistApplication(record);if(saved){$("manualAppForm").reset();$("manualAppForm").hidden=true;}});$("dismissSetupNotice").addEventListener("click",()=>$("setupNotice").hidden=true);}
+});document.querySelectorAll("[data-view]").forEach(b=>b.addEventListener("click",()=>{goView(b.dataset.view);const menu=$("deskAccountMenuPopover");if(menu)menu.hidden=true;const toggle=$("deskAccountMenuToggle");if(toggle)toggle.setAttribute("aria-expanded","false");}));document.querySelectorAll("[data-tool]").forEach(b=>b.addEventListener("click",()=>renderTool(b.dataset.tool)));$("toolForm").addEventListener("submit",generate);$("saveDraftButton").addEventListener("click",saveDraft);$("trackCurrentButton").addEventListener("click",saveSelected);$("copyDraftButton").addEventListener("click",async()=>{try{await navigator.clipboard.writeText($("outputText").value);toast("Draft copied.");}catch{$("outputText").select();toast("Select the text and copy it manually.");}});$("downloadDraftButton").addEventListener("click",()=>{const blob=new Blob([$("outputText").value],{type:"text/plain;charset=utf-8"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=safeFileName(($("field-title")?.value||activeTool)+"-scholar-news-draft")+".txt";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);});$("authForm").addEventListener("submit",authSubmit);document.querySelectorAll("[data-auth-mode]").forEach(b=>b.addEventListener("click",()=>changeAuth(b.dataset.authMode)));$("forgotPassword").addEventListener("click",resetPassword);$("recoveryForm").addEventListener("submit",changePassword);$("cancelRecovery").addEventListener("click",cancelPasswordRecovery);$("signOutButton").addEventListener("click",signOutUser);$("deskMenuSignOutButton").addEventListener("click",signOutUser);
+$("deskAccountMenuToggle").addEventListener("click",event=>{event.stopPropagation();const menu=$("deskAccountMenuPopover"),opening=menu.hidden;menu.hidden=!opening;$("deskAccountMenuToggle").setAttribute("aria-expanded",String(opening));});
+$("deskMenuDraftsButton").addEventListener("click",()=>{const menu=$("deskAccountMenuPopover");if(menu)menu.hidden=true;$("deskAccountMenuToggle").setAttribute("aria-expanded","false");goView("dashboard");$("savedDraftsList").scrollIntoView({behavior:"smooth",block:"center"});});
+$("resendConfirmationButton").addEventListener("click",resendSignupConfirmation);
+document.addEventListener("click",event=>{if(!event.target.closest("#deskAccountMenuWrap")){$("deskAccountMenuPopover").hidden=true;$("deskAccountMenuToggle").setAttribute("aria-expanded","false");}});
+document.addEventListener("keydown",event=>{if(event.key==="Escape"){$("deskAccountMenuPopover").hidden=true;$("deskAccountMenuToggle").setAttribute("aria-expanded","false");}});$("profileForm").addEventListener("submit",saveProfile);$("cvUploadForm").addEventListener("submit",uploadCV);$("cvFileList").addEventListener("click",e=>{const d=e.target.closest("[data-cv-download]"),r=e.target.closest("[data-cv-delete]");if(d)downloadCV(d.dataset.cvDownload);if(r)deleteCV(r.dataset.cvDelete);});$("applicationsList").addEventListener("change",e=>{const el=e.target.closest("[data-app-status]");if(el)updateAppStatus(el.dataset.appStatus,el.value);});$("applicationsList").addEventListener("click",e=>{const rm=e.target.closest("[data-remove-app]"),ed=e.target.closest("[data-edit-app]");if(rm)removeApp(rm.dataset.removeApp);if(ed)editNotes(ed.dataset.editApp);});$("savedDraftsList").addEventListener("click",e=>{const open=e.target.closest("[data-open-draft]"),del=e.target.closest("[data-delete-draft]");if(open)openDraft(open.dataset.openDraft);if(del)deleteDraft(del.dataset.deleteDraft);});$("applicationSearch").addEventListener("input",renderApps);$("applicationStatusFilter").addEventListener("change",renderApps);$("addManualApplication").addEventListener("click",()=>{if(!requireUser())return;$("manualAppForm").hidden=!$("manualAppForm").hidden;});$("cancelManualApplication").addEventListener("click",()=>$("manualAppForm").hidden=true);$("manualAppForm").addEventListener("submit",async e=>{e.preventDefault();const title=trim($("manualTitle").value),institution=trim($("manualInstitution").value),record={title,institution,deadline:safeDeadline($("manualDeadline").value),official_url:trim($("manualUrl").value),opportunity_key:("manual:"+title+"|"+institution).slice(0,450),status:"interested"};const saved=await persistApplication(record);if(saved){$("manualAppForm").reset();$("manualAppForm").hidden=true;}});$("dismissSetupNotice").addEventListener("click",()=>$("setupNotice").hidden=true);}
 function start(){ $("deskYear")&&($("deskYear").textContent=new Date().getFullYear());try{selected=JSON.parse(sessionStorage.getItem(SELECTED_KEY)||"null");}catch{selected=null;}if(selected&&trim(selected.title)){$("selectedOpportunityCard").hidden=false;$("selectedOppTitle").textContent=trim(selected.title);$("selectedOppMeta").textContent=[valueFrom(["hosting_institution","funding_organization","institution"]),valueFrom(["location"]),valueFrom(["closing_date","deadline","application_deadline"])?"Deadline: "+valueFrom(["closing_date","deadline","application_deadline"]):""].filter(Boolean).join(" · ");const url=safeHTTP(valueFrom(["application_url","source_url","url"]));if(url){$("selectedOppOfficial").href=url;$("selectedOppOfficial").hidden=false;}}bind();const query=new URLSearchParams(location.search),requested=query.get("tool");if(requested==="tracker"){pendingAutoTrack=true;goView("applications");}else if(tools[requested])renderTool(requested);else goView("dashboard");initAuth();}
 document.addEventListener("DOMContentLoaded",start);
 })();
