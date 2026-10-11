@@ -76,3 +76,19 @@
 .motivation-suggestions>small{flex:1 0 100%;font-size:11px;color:var(--muted)}
 .motivation-suggestion{border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--ink);padding:7px 11px;font-size:11px;font-weight:700}
 .motivation-suggestion:hover{border-color:var(--orange);background:var(--soft)}
+
+
+/* Multiple optional motivation statements with replace-not-append selection */
+.motivation-suggestion.active{border-color:var(--orange);background:var(--soft);box-shadow:inset 0 0 0 1px var(--orange)}
+.motivation-options{flex:1 0 100%;width:100%;margin-top:8px;padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--paper)}
+.motivation-options-heading{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:10px}
+.motivation-options-heading strong{font-size:12px;color:var(--ink)}
+.motivation-options-heading span{font-size:10px;color:var(--muted)}
+.motivation-option-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.motivation-option-card{display:flex;flex-direction:column;align-items:flex-start;gap:8px;min-width:0;padding:12px;border:1px solid var(--line);border-radius:9px;background:var(--surface)}
+.motivation-option-label{font-size:9px;letter-spacing:.08em;font-weight:800;color:var(--orange)}
+.motivation-option-card p{margin:0;color:var(--ink);font-size:11px;line-height:1.7;overflow-wrap:anywhere}
+.motivation-option-use{margin-top:auto;border:1px solid var(--line);border-radius:7px;padding:7px 10px;background:var(--surface);color:var(--ink);font-size:10px;font-weight:800}
+.motivation-option-use:hover,.motivation-option-use[aria-pressed="true"]{border-color:var(--orange);background:var(--soft);color:var(--ink)}
+@media(max-width:620px){.motivation-option-list{grid-template-columns:1fr}.motivation-options{padding:10px}.motivation-options-heading{align-items:flex-start;flex-direction:column;gap:3px}}
+
