@@ -25,7 +25,7 @@ function cleanOfficialText(value){
  return text.replace(/\r/g,"").replace(/[ \t]+\n/g,"\n").replace(/\n[ \t]+/g,"\n").replace(/[ \t]{2,}/g," ").replace(/\n{3,}/g,"\n\n").trim();
 }
 
-function normalizeCVText(value){return String(value||"").replace(/\u0000/g,"").replace(/\r/g,"").replace(/[ \t]+\n/g,"\n").replace(/\n[ \t]+/g,"\n").replace(/[ \t]{2,}/g," ").replace(/\n{3,}/g,"\n\n").trim().slice(0,60000);}
+function normalizeCVText(value){return String(value||"").replace(/\u0000/g,"").replace(/\r/g,"").replace(/[ \t]+\n/g,"\n").replace(/\n[ \t]+/g,"\n").replace(/[ \t]{2,}/g," ").replace(/\n{3,}/g,"\n\n").trim();}
 function pdfItemsToLines(items){
  const positioned=(items||[]).filter(item=>item&&typeof item.str==="string"&&item.str.trim()).map((item,index)=>({text:item.str.trim(),x:Number(item.transform?.[4]),y:Number(item.transform?.[5]),index,hasEOL:Boolean(item.hasEOL)}));
  if(!positioned.length)return "";
@@ -48,29 +48,49 @@ function cleanCVForEvidence(value){
   .replace(/\|\s*(?:\|\s*)+/g," | "));
 }
 function cleanExtractedCVText(value){
- let text=normalizeCVText(value).replace(/\f/g,"\n")
+ const sectionHeading=/\b(?:PROFESSIONAL\s+SUMMARY|CAREER\s+SUMMARY|PROFESSIONAL\s+PROFILE|PERSONAL\s+PROFILE|CAREER\s+OBJECTIVE|OBJECTIVE|WORK\s+EXPERIENCE|PROFESSIONAL\s+EXPERIENCE|ACADEMIC\s+EXPERIENCE|EMPLOYMENT\s+HISTORY|RESEARCH\s+EXPERIENCE|TEACHING\s+EXPERIENCE|EDUCATION(?:AL\s+BACKGROUND)?|ACADEMIC\s+QUALIFICATIONS|QUALIFICATIONS|TECHNICAL\s+SKILLS|CORE\s+COMPETENCIES|KEY\s+SKILLS|SKILLS|PUBLICATIONS|RESEARCH\s+PROJECTS|PROJECTS|AWARDS|HONOURS|HONORS|CERTIFICATIONS|CERTIFICATES|LANGUAGES|VOLUNTEER\s+EXPERIENCE|REFERENCES)\b/i;
+ const bulletPrefix=/^\s*(?:(?:[•▪◦●○◆◇■□‣⁃·∙*]+)\s*|\(?\d{1,3}[.)]\s+|[A-Za-z][.)]\s+)/u;
+ let text=String(value||"").replace(/\f/g,"\n").replace(/\u0000/g,"").replace(/\r/g,"");
+ // When a page counter is followed by the start of a section, remove only the counter.
+ // Otherwise drop the repeated page-header/footer line entirely.
+ text=text.split("\n").map(line=>{
+  const page=line.match(/^\s*(?:PG|PAGE)\.?\s*\d+\s*(?:\/|OF)\s*\d+\s*(.*)$/i);
+  if(!page)return line;
+  return sectionHeading.test(page[1])?page[1]:page[1].trim()?(/(?:https?:\/\/|www\.|@|orcid|google scholar|linkedin|github|\+?\d[\d\s().-]{7,}\d)/i.test(page[1])?"":page[1]):"";
+ }).join("\n");
+ text=text
   .replace(/\b(?:PG|PAGE)\.?\s*\d+\s*(?:\/|OF)\s*\d+\b/gi," ")
-  .replace(/^\s*(?:PG|PAGE)\.?\s*\d+\s*(?:\/|OF)\s*\d+\s*$/gim,"")
-  .replace(/^\s*(?:page\s*)?\d+\s*(?:\/|of)\s*\d+\s*$/gim,"");
- const headingRe=/\b(?:PROFESSIONAL\s+SUMMARY|CAREER\s+SUMMARY|PROFESSIONAL\s+PROFILE|PERSONAL\s+PROFILE|CAREER\s+OBJECTIVE|OBJECTIVE|WORK\s+EXPERIENCE|PROFESSIONAL\s+EXPERIENCE|ACADEMIC\s+EXPERIENCE|EMPLOYMENT\s+HISTORY|RESEARCH\s+EXPERIENCE|TEACHING\s+EXPERIENCE|EDUCATION(?:AL\s+BACKGROUND)?|ACADEMIC\s+QUALIFICATIONS|QUALIFICATIONS|TECHNICAL\s+SKILLS|CORE\s+COMPETENCIES|KEY\s+SKILLS|SKILLS|PUBLICATIONS|RESEARCH\s+PROJECTS|PROJECTS|AWARDS|HONOURS|HONORS|CERTIFICATIONS|CERTIFICATES|LANGUAGES|VOLUNTEER\s+EXPERIENCE|REFERENCES)\b/i;
- let lines=text.split("\n").map(line=>line.replace(/[ \t]+/g," ").trim()).filter(Boolean);
- const firstHeading=lines.findIndex(line=>headingRe.test(line));
+  .replace(/^\s*(?:page\s*)?\d+\s*(?:\/|of)\s*\d+\s*$/gim,"")
+  .replace(/^\s*(?:page|pg\.?)\s*\d+\s*$/gim,"");
+ let lines=normalizeCVText(text).split("\n").map(line=>line.replace(/[ \t]+/g," ").trim()).filter(Boolean);
+ const firstHeading=lines.findIndex(line=>sectionHeading.test(line));
  if(firstHeading>=0){
-  const headingMatch=headingRe.exec(lines[firstHeading]);
+  const headingMatch=sectionHeading.exec(lines[firstHeading]);
   if(headingMatch)lines[firstHeading]=lines[firstHeading].slice(headingMatch.index).trim();
+  // A CV's personal/contact banner is not work evidence.
   lines=lines.slice(firstHeading);
  }
- const counts=new Map();
- for(const line of lines){
-  const key=line.toLowerCase().replace(/\s+/g," ").trim();
-  if(key.length>=8&&key.length<=105)counts.set(key,(counts.get(key)||0)+1);
- }
+ // Strip decorative bullet glyphs and list-number prefixes but preserve the text of every item.
+ lines=lines.map(line=>line.replace(bulletPrefix,"").trim()).filter(Boolean);
+ // Drop stand-alone counters and contact/footer lines.
  lines=lines.filter(line=>{
   if(/^(?:(?:pg|page)\.?\s*)?\d+\s*(?:\/|of)\s*\d+$/i.test(line))return false;
+  if(/^(?:page|pg\.?)\s*\d+$/i.test(line))return false;
   if(/^(?:confidential|curriculum vitae|résumé|resume)\s*(?:\|\s*)?$/i.test(line))return false;
   if(/^(?:https?:\/\/|www\.)\S+$/i.test(line))return false;
   if(/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(line))return false;
-  if(counts.get(line.toLowerCase().replace(/\s+/g," ").trim())>=3 && line.length<=105 && !/^[•▪◦●*-]/.test(line) && !headingRe.test(line))return false;
+  return true;
+ });
+ // Remove repeated short page headers/footers while keeping the first occurrence of each line.
+ const counts=new Map();
+ for(const line of lines){const key=line.toLowerCase().replace(/\s+/g," ").trim();if(key.length>=8&&key.length<=105)counts.set(key,(counts.get(key)||0)+1);}
+ const seen=new Set();
+ lines=lines.filter(line=>{
+  const key=line.toLowerCase().replace(/\s+/g," ").trim();
+  if(counts.get(key)>=2&&key.length>=8&&key.length<=105&&!sectionHeading.test(line)){
+   if(seen.has(key))return false;
+   seen.add(key);
+  }
   return true;
  });
  return normalizeCVText(lines.join("\n"));
@@ -82,11 +102,10 @@ async function extractCVTextFromFile(file,ext){
   pdfjs.GlobalWorkerOptions.workerSrc="https://cdn.jsdelivr.net/npm/pdfjs-dist@6.4.299/build/pdf.worker.mjs";
   const pdf=await pdfjs.getDocument({data:await file.arrayBuffer()}).promise;
   const pages=[];
-  for(let pageNo=1;pageNo<=Math.min(pdf.numPages,100);pageNo++){
+  for(let pageNo=1;pageNo<=pdf.numPages;pageNo++){
    const page=await pdf.getPage(pageNo);
    const content=await page.getTextContent();
    pages.push(pdfItemsToLines(content.items));
-   if(pages.join("\n").length>=60000)break;
   }
   const text=normalizeCVText(pages.join("\n\n"));
   if(!text.replace(/\s/g,"").length)throw new Error("No selectable text was found. This may be a scanned/image-only PDF; use a text-based PDF or DOCX file.");
@@ -237,27 +256,19 @@ function makeCVEvidence(raw,tool){
  const sections=[];
  for(let i=0;i<found.length;i++){
   const h=found[i],end=i+1<found.length?found[i+1].start:text.length;
-  let body=text.slice(h.end,end).replace(/^[\s:|•·-]+/,"").trim();
-  body=body.split("\n").map(line=>line.replace(/[ \t]{2,}/g," ").trim()).filter(Boolean).join("\n");
-  body=body.replace(/[•▪◦●]\s*/g,"• ");
-  if(body)sections.push({label:h.label,body});
+  let body=text.slice(h.end,end).replace(/^[\s:|•·\-–—]+/u,"").trim();
+  body=body.split("\n").map(line=>line.replace(/^\s*(?:(?:[•▪◦●○◆◇■□‣⁃·∙*]+)\s*|\(?\d{1,3}[.)]\s+|[A-Za-z][.)]\s+)/u,"").replace(/[ \t]{2,}/g," ").trim()).filter(Boolean).join("\n");
+  body=cleanCVForEvidence(body);
+  // Headings with no real content (for example a stray "AWARDS: &") are not evidence.
+  if(body&&/[\p{L}\p{N}]/u.test(body))sections.push({label:h.label,body});
  }
- if(!sections.length)return tool==="cv"?text:text.slice(0,1800)+(text.length>1800?"…":"");
- if(tool==="cv"){
-  return sections.map(section=>section.label+":\n"+section.body).join("\n\n");
+ if(!sections.length){
+  // Preserve all readable content; no short fallback preview or arbitrary character cap.
+  return cleanCVForEvidence(cleanExtractedCVText(text));
  }
- const preferred=tool==="statement"?["Research","Education","Teaching","Experience","Publications","Projects","Professional summary","Skills","Awards"]:tool==="email"?["Professional summary","Experience","Research","Education","Teaching","Skills","Projects","Publications"]:["Professional summary","Experience","Research","Education","Teaching","Skills","Projects","Publications","Awards","Certifications"];
- const output=[];let total=0;
- for(const label of preferred){
-  const section=sections.find(s=>s.label===label);
-  if(!section)continue;
-  const body=section.body.replace(/\s+/g," ").slice(0,label==="Professional summary"?420:460).trim();
-  const entry=label+": "+body;
-  if(total+entry.length>1650)continue;
-  output.push(entry);total+=entry.length+1;
-  if(output.length>=4)break;
- }
- return output.join("\n")||sections.slice(0,3).map(s=>s.label+": "+s.body.slice(0,350)).join("\n");
+ // Keep source order and each full section, including all bullets, dates, dissertation titles and evidence.
+ // The cover-letter background field must never begin with country/residency metadata.
+ return sections.map(section=>section.label+":\n"+section.body).join("\n\n");
 }
 function fillBlankProfileInputs(facts){
  const values={profileName:facts.full_name,profileCountry:facts.country,profileInstitution:facts.institution,profileLevel:facts.education_level,profileDiscipline:facts.discipline};
@@ -305,10 +316,10 @@ function vals(){const result={};new FormData($("toolForm")).forEach((v,k)=>resul
 
 function prefillActiveToolFromProfile(){
  if(!user||!tools[activeTool]||!$("toolFields"))return;
- const facts=profile.cv_text?guessCVFacts(profile.cv_text):{};
- const country=profile.country||facts.country||"";
  const evidence=makeCVEvidence(profile.cv_text,activeTool);
- const profileEvidence=[country?"Country / residency: "+country:"",evidence].filter(Boolean).join("\n\n");
+ const country=profile.country||"";
+ // Country/residency belongs in eligibility context, not the cover-letter "Relevant background and evidence" field.
+ const profileEvidence=activeTool==="eligibility"&&country?["Country / residency: "+country,evidence].filter(Boolean).join("\n\n"):evidence;
  const values={name:profile.full_name||user.user_metadata?.full_name||"",email:profile.email||user.email||"",institution:profile.institution||"",profile:profileEvidence};
  for(const [key,value] of Object.entries(values)){
   const el=$("field-"+key);
@@ -528,7 +539,7 @@ async function loadProfile(force=false){
 async function saveProfile(e){
  e.preventDefault();if(!requireReady()||!requireUser())return;
  const ownerId=user.id;
- const payload={user_id:ownerId,email:(trim($("profileEmail").value)||profile.email||user.email).slice(0,320),full_name:trim($("profileName").value).slice(0,200),country:trim($("profileCountry").value).slice(0,120),institution:trim($("profileInstitution").value).slice(0,300),education_level:trim($("profileLevel").value).slice(0,100),discipline:trim($("profileDiscipline").value).slice(0,300),cv_text:trim($("profileCVText").value).slice(0,60000),updated_at:new Date().toISOString()};
+ const payload={user_id:ownerId,email:(trim($("profileEmail").value)||profile.email||user.email).slice(0,320),full_name:trim($("profileName").value).slice(0,200),country:trim($("profileCountry").value).slice(0,120),institution:trim($("profileInstitution").value).slice(0,300),education_level:trim($("profileLevel").value).slice(0,100),discipline:trim($("profileDiscipline").value).slice(0,300),cv_text:trim($("profileCVText").value),updated_at:new Date().toISOString()};
  const {error}=await db.from("profiles").upsert(payload);
  if(!user||user.id!==ownerId)return;
  if(error){status("profileSaveStatus","Could not save profile: "+error.message,"error");return;}
