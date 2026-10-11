@@ -317,12 +317,13 @@ function addMotivationSuggestions(tool){
  const target=$("field-"+(tool==="statement"?"goals":"motivation"));
  if(!target||!["cover","statement"].includes(tool)||target.parentElement.querySelector(".motivation-suggestions"))return;
  const wrap=document.createElement("div");wrap.className="motivation-suggestions";
- const caption=document.createElement("small");caption.textContent="Quick starting points — select one, then personalize it.";
+ const caption=document.createElement("small");caption.textContent="Explore several wording options. Choosing another replaces the last suggested statement from these buttons, so repeated clicks won’t duplicate it.";
  wrap.appendChild(caption);
  const labels=[["fit","Match my background"],["contribution","Contribution & impact"],["growth","Career development"]];
  for(const [kind,label] of labels){
-  const button=document.createElement("button");button.type="button";button.className="motivation-suggestion";button.textContent=label;button.dataset.motivationSuggestion=kind;wrap.appendChild(button);
+  const button=document.createElement("button");button.type="button";button.className="motivation-suggestion";button.textContent=label;button.dataset.motivationSuggestion=kind;button.setAttribute("aria-expanded","false");wrap.appendChild(button);
  }
+ const panel=document.createElement("div");panel.className="motivation-options";panel.hidden=true;panel.setAttribute("aria-live","polite");wrap.appendChild(panel);
  target.insertAdjacentElement("afterend",wrap);
 }
 function opportunityFocusWords(){
@@ -334,11 +335,83 @@ function opportunityFocusWords(){
  const background=shared||trim(profile.discipline)||areas.find(area=>cv.includes(area))||"the skills and experience documented in my CV";
  return {target,background,institution:trim($("field-institution")?.value)||"the organization"};
 }
-function buildMotivationSuggestion(kind){
+function buildMotivationSuggestion(kind,index=0){
  const {target,background,institution}=opportunityFocusWords();
- if(kind==="fit")return "This opportunity interests me because its focus on "+target+" aligns with my background in "+background+". I would welcome the opportunity to apply the experience documented in my CV to the role’s priorities and continue developing in this area.";
- if(kind==="contribution")return "I am interested in contributing to "+institution+" through the skills and experience outlined in my CV. The opportunity’s focus on "+target+" is relevant to my interests, and I would value the chance to collaborate with colleagues and contribute to the team’s goals.";
- return "I see this opportunity as a chance to build on my existing background while developing further in "+target+". I am motivated by the possibility of making a meaningful contribution, learning from colleagues, and strengthening my experience in this field.";
+ const options={
+  fit:[
+   "My background in "+background+" aligns with this opportunity’s focus on "+target+". I am keen to bring the knowledge and experience described in my CV to the role while continuing to develop my expertise in this area.",
+   "Through my experience in "+background+", I have developed a foundation relevant to "+target+". This opportunity is a strong fit for my current skills and the direction in which I hope to grow.",
+   "The connection between my experience in "+background+" and this opportunity’s work in "+target+" particularly motivates me. I would be excited to apply my existing strengths while learning from this environment.",
+   "My academic and professional experience has prepared me to engage with work related to "+target+". I see this as a natural next step where I can build on my background in "+background+"."
+  ],
+  contribution:[
+   "I hope to contribute to "+institution+" by applying my experience in "+background+" to the objectives of this opportunity, collaborating constructively with colleagues, and supporting meaningful work related to "+target+".",
+   "I would bring a thoughtful, reliable approach and the skills I have developed in "+background+". I am especially interested in supporting "+target+" through collaboration, evidence-based problem-solving, and a focus on results.",
+   "Beyond benefiting from this opportunity, I aim to contribute actively through my strengths in "+background+", share ideas with the team, and support practical progress on "+target+".",
+   "I value environments where people combine expertise and collaboration to solve meaningful problems. I would welcome the chance to contribute my experience in "+background+" to "+institution+"'s work related to "+target+"."
+  ],
+  growth:[
+   "This opportunity would help me deepen my expertise in "+target+" while building on my current background in "+background+". I am eager to learn from experienced colleagues and translate that learning into a stronger contribution.",
+   "At this stage of my career, I am looking for an opportunity that challenges me to grow professionally, broaden my perspective, and strengthen my skills in "+target+" while making a useful contribution.",
+   "I see this opportunity as a valuable step toward my longer-term goals: developing greater depth in "+target+", learning new approaches, and applying them responsibly in my work.",
+   "Engaging with "+target+" would allow me to extend my existing experience in "+background+" and develop capabilities that support sustained, meaningful work in this field."
+  ]
+ };
+ const list=options[kind]||options.fit;
+ return list[((Number(index)||0)%list.length+list.length)%list.length];
+}
+function renderMotivationOptions(wrap,kind){
+ const panel=wrap.querySelector(".motivation-options");
+ if(!panel)return;
+ const labels={fit:"Match my background",contribution:"Contribution & impact",growth:"Career development"};
+ panel.dataset.kind=kind;
+ panel.innerHTML='<div class="motivation-options-heading"><strong>'+esc(labels[kind]||"Suggested statements")+'</strong><span>Choose one of these four options</span></div><div class="motivation-option-list">'+[0,1,2,3].map(index=>'<article class="motivation-option-card"><div class="motivation-option-label">OPTION '+(index+1)+'</div><p>'+esc(buildMotivationSuggestion(kind,index))+'</p><button type="button" class="motivation-option-use" data-motivation-option="'+esc(kind)+'" data-motivation-index="'+index+'" aria-pressed="false">Use this statement</button></article>').join("")+'</div>';
+ panel.hidden=false;
+ wrap.querySelectorAll("[data-motivation-suggestion]").forEach(button=>{
+  const active=button.dataset.motivationSuggestion===kind;
+  button.classList.toggle("active",active);
+  button.setAttribute("aria-expanded",String(active));
+ });
+}
+function useMotivationSuggestion(target,suggestion){
+ suggestion=trim(suggestion);
+ if(!target||!suggestion)return;
+ const value=target.value||"";
+ const oldText=target.dataset.snSuggestionText||"";
+ if(value.includes(suggestion)){
+  if(suggestion===oldText)toast("That statement is already selected.");
+  else toast("That statement is already in the text. Choose a different option.");
+  return;
+ }
+ let startAt=-1;
+ if(oldText){
+  const recorded=Number(target.dataset.snSuggestionStart);
+  if(Number.isInteger(recorded)&&recorded>=0&&value.slice(recorded,recorded+oldText.length)===oldText)startAt=recorded;
+  else startAt=value.lastIndexOf(oldText);
+ }
+ let nextValue;
+ if(startAt>=0){
+  nextValue=value.slice(0,startAt)+suggestion+value.slice(startAt+oldText.length);
+ }else{
+  const start=target.selectionStart??value.length,end=target.selectionEnd??start;
+  const before=value.slice(0,start);
+  const separator=before.trim()?(before.endsWith("\n")?"\n":"\n\n"):"";
+  startAt=start+separator.length;
+  nextValue=value.slice(0,start)+separator+suggestion+value.slice(end);
+ }
+ target.value=nextValue;
+ target.dataset.snSuggestionText=suggestion;
+ target.dataset.snSuggestionStart=String(startAt);
+ try{target.setSelectionRange(startAt+suggestion.length,startAt+suggestion.length);}catch{}
+ target.dispatchEvent(new Event("input",{bubbles:true}));
+ target.focus();
+ const panel=target.parentElement.querySelector(".motivation-suggestions .motivation-options");
+ if(panel){
+  panel.querySelectorAll("[data-motivation-option]").forEach(button=>{
+   const isCurrent=button.dataset.motivationOption===panel.dataset.kind&&button.dataset.motivationIndex===String(suggestion);
+   button.setAttribute("aria-pressed",String(isCurrent));
+  });
+ }
 }
 function renderTool(tool){if(tool==="tracker"){pendingAutoTrack=true;goView("applications");if(user)autoTrack();return;}if(!tools[tool])tool="cover";activeDraftKey="";activeDraftTitle="";activeTool=tool;const d=tools[tool],number=Object.keys(tools).indexOf(tool)+1;$("toolEyebrow").textContent="TOOL "+String(number).padStart(2,"0")+" / APPLICATION STUDIO";$("toolTitle").textContent=d.title;$("toolDescription").textContent=d.desc;$("toolLargeIcon").textContent=d.icon;$("toolFields").innerHTML=d.fields.map(fieldHTML).join("");document.querySelectorAll(".prepare-tool").forEach(b=>b.classList.toggle("active",b.dataset.tool===tool));$("toolOutput").hidden=true;const defaults={title:valueFrom(["title","opportunity_title"]),institution:valueFrom(["hosting_institution","funding_organization","institution","organization"]),description:cleanOfficialText(valueFrom(["description","job_description","summary"])),url:valueFrom(["application_url","source_url","url"])};Object.keys(defaults).forEach(k=>{const el=$("field-"+k);if(el&&!el.value)el.value=defaults[k];});prefillActiveToolFromProfile();addMotivationSuggestions(tool);goView("prepare");}
 function makeDraft(tool,v){const title=v.title||"the advertised opportunity",institution=v.institution||"the host organization",name=v.name||"[Your name]",profileText=v.profile||"[Add your accurate qualifications and evidence]",description=cleanOfficialText(v.description||"[Insert specific criteria from the official listing]"),motivation=v.motivation||v.goals||"[Explain your genuine motivation and goals]",today=new Date().toLocaleDateString();
@@ -504,7 +577,27 @@ async function cancelPasswordRecovery(){
 }
 function changeAuth(mode){authMode=mode==="signup"?"signup":"signin";document.querySelectorAll("[data-auth-mode]").forEach(b=>b.classList.toggle("active",b.dataset.authMode===authMode));$("authTitle").textContent=authMode==="signup"?"Create your student account.":"Welcome back.";$("authIntro").textContent=authMode==="signup"?"Create an account to keep your private CV and application records together.":"Sign in to continue with your application workspace.";$("authNameWrap").hidden=authMode!=="signup";$("authSubmit").textContent=!isReady()?"Account setup required":(authMode==="signup"?"Create account →":"Sign in securely →");$("authPassword").autocomplete=authMode==="signup"?"new-password":"current-password";status("authStatus",isReady()?"":"The account service has not been configured, so real sign-up and sign-in cannot run yet. Open the setup guide below.","error");}
 function initAuth(){if(!isReady()){$("setupNotice").hidden=false;$("authSetupInline").hidden=false;$("connectionStatus").innerHTML="<i></i> Account setup needed";$("connectionStatus").classList.add("offline");$("authSubmit").disabled=false;$("authSubmit").title="Account creation requires Supabase configuration; see SETUP.md";status("authStatus","Real account creation is not active yet. Configure the Supabase project URL and public key using the setup guide below, then reload this page.","error");return;}db=window.supabase.createClient(cfg.url,cfg.anonKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});db.auth.onAuthStateChange((event,session)=>{setTimeout(async()=>{if(event==="PASSWORD_RECOVERY")recoveryMode=true;try{await onAuthChanged(session?.user||null);if(event==="PASSWORD_RECOVERY"){recoveryMode=true;syncAuth();goView("account");status("recoveryStatus","Reset link verified. Choose a new password below.","success");}}catch(e){toast(e.message||"Account session could not be loaded.",true);}},0);});db.auth.getSession().then(({data,error})=>{if(error)toast(error.message,true);return onAuthChanged(data.session?.user||null);}).catch(e=>toast("Account connection failed: "+e.message,true));}
-function bind(){ $("toolFields").addEventListener("click",event=>{const button=event.target.closest("[data-motivation-suggestion]");if(!button)return;const target=$("field-"+(activeTool==="statement"?"goals":"motivation"));if(!target)return;const suggestion=buildMotivationSuggestion(button.dataset.motivationSuggestion);const start=target.selectionStart??target.value.length,end=target.selectionEnd??target.value.length;target.setRangeText(suggestion,start,end,"end");target.dispatchEvent(new Event("input",{bubbles:true}));target.focus();});document.querySelectorAll("[data-view]").forEach(b=>b.addEventListener("click",()=>goView(b.dataset.view)));document.querySelectorAll("[data-tool]").forEach(b=>b.addEventListener("click",()=>renderTool(b.dataset.tool)));$("toolForm").addEventListener("submit",generate);$("saveDraftButton").addEventListener("click",saveDraft);$("trackCurrentButton").addEventListener("click",saveSelected);$("copyDraftButton").addEventListener("click",async()=>{try{await navigator.clipboard.writeText($("outputText").value);toast("Draft copied.");}catch{$("outputText").select();toast("Select the text and copy it manually.");}});$("downloadDraftButton").addEventListener("click",()=>{const blob=new Blob([$("outputText").value],{type:"text/plain;charset=utf-8"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=safeFileName(($("field-title")?.value||activeTool)+"-scholar-news-draft")+".txt";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);});$("authForm").addEventListener("submit",authSubmit);document.querySelectorAll("[data-auth-mode]").forEach(b=>b.addEventListener("click",()=>changeAuth(b.dataset.authMode)));$("forgotPassword").addEventListener("click",resetPassword);$("recoveryForm").addEventListener("submit",changePassword);$("cancelRecovery").addEventListener("click",cancelPasswordRecovery);$("signOutButton").addEventListener("click",async()=>{if(db){const {error}=await db.auth.signOut();if(error)toast(error.message,true);else{await onAuthChanged(null);drafts=[];renderDrafts();recoveryMode=false;goView("dashboard");toast("You have signed out.");}}});$("profileForm").addEventListener("submit",saveProfile);$("cvUploadForm").addEventListener("submit",uploadCV);$("cvFileList").addEventListener("click",e=>{const d=e.target.closest("[data-cv-download]"),r=e.target.closest("[data-cv-delete]");if(d)downloadCV(d.dataset.cvDownload);if(r)deleteCV(r.dataset.cvDelete);});$("applicationsList").addEventListener("change",e=>{const el=e.target.closest("[data-app-status]");if(el)updateAppStatus(el.dataset.appStatus,el.value);});$("applicationsList").addEventListener("click",e=>{const rm=e.target.closest("[data-remove-app]"),ed=e.target.closest("[data-edit-app]");if(rm)removeApp(rm.dataset.removeApp);if(ed)editNotes(ed.dataset.editApp);});$("savedDraftsList").addEventListener("click",e=>{const open=e.target.closest("[data-open-draft]"),del=e.target.closest("[data-delete-draft]");if(open)openDraft(open.dataset.openDraft);if(del)deleteDraft(del.dataset.deleteDraft);});$("applicationSearch").addEventListener("input",renderApps);$("applicationStatusFilter").addEventListener("change",renderApps);$("addManualApplication").addEventListener("click",()=>{if(!requireUser())return;$("manualAppForm").hidden=!$("manualAppForm").hidden;});$("cancelManualApplication").addEventListener("click",()=>$("manualAppForm").hidden=true);$("manualAppForm").addEventListener("submit",async e=>{e.preventDefault();const title=trim($("manualTitle").value),institution=trim($("manualInstitution").value),record={title,institution,deadline:safeDeadline($("manualDeadline").value),official_url:trim($("manualUrl").value),opportunity_key:("manual:"+title+"|"+institution).slice(0,450),status:"interested"};const saved=await persistApplication(record);if(saved){$("manualAppForm").reset();$("manualAppForm").hidden=true;}});$("dismissSetupNotice").addEventListener("click",()=>$("setupNotice").hidden=true);}
+function bind(){ $("toolFields").addEventListener("click",event=>{
+ const option=event.target.closest("[data-motivation-option]");
+ if(option){
+  const target=$("field-"+(activeTool==="statement"?"goals":"motivation"));
+  if(!target)return;
+  const suggestion=buildMotivationSuggestion(option.dataset.motivationOption,Number(option.dataset.motivationIndex));
+  useMotivationSuggestion(target,suggestion);
+  const panel=option.closest(".motivation-options");
+  if(panel)panel.querySelectorAll("[data-motivation-option]").forEach(button=>button.setAttribute("aria-pressed",String(button.dataset.motivationOption===option.dataset.motivationOption&&button.dataset.motivationIndex===option.dataset.motivationIndex)));
+  return;
+ }
+ const button=event.target.closest("[data-motivation-suggestion]");
+ if(!button)return;
+ const wrap=button.closest(".motivation-suggestions");
+ if(!wrap)return;
+ const panel=wrap.querySelector(".motivation-options");
+ if(panel&&!panel.hidden&&panel.dataset.kind===button.dataset.motivationSuggestion){
+  panel.hidden=true;button.classList.remove("active");button.setAttribute("aria-expanded","false");return;
+ }
+ renderMotivationOptions(wrap,button.dataset.motivationSuggestion);
+});document.querySelectorAll("[data-view]").forEach(b=>b.addEventListener("click",()=>goView(b.dataset.view)));document.querySelectorAll("[data-tool]").forEach(b=>b.addEventListener("click",()=>renderTool(b.dataset.tool)));$("toolForm").addEventListener("submit",generate);$("saveDraftButton").addEventListener("click",saveDraft);$("trackCurrentButton").addEventListener("click",saveSelected);$("copyDraftButton").addEventListener("click",async()=>{try{await navigator.clipboard.writeText($("outputText").value);toast("Draft copied.");}catch{$("outputText").select();toast("Select the text and copy it manually.");}});$("downloadDraftButton").addEventListener("click",()=>{const blob=new Blob([$("outputText").value],{type:"text/plain;charset=utf-8"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=safeFileName(($("field-title")?.value||activeTool)+"-scholar-news-draft")+".txt";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);});$("authForm").addEventListener("submit",authSubmit);document.querySelectorAll("[data-auth-mode]").forEach(b=>b.addEventListener("click",()=>changeAuth(b.dataset.authMode)));$("forgotPassword").addEventListener("click",resetPassword);$("recoveryForm").addEventListener("submit",changePassword);$("cancelRecovery").addEventListener("click",cancelPasswordRecovery);$("signOutButton").addEventListener("click",async()=>{if(db){const {error}=await db.auth.signOut();if(error)toast(error.message,true);else{await onAuthChanged(null);drafts=[];renderDrafts();recoveryMode=false;goView("dashboard");toast("You have signed out.");}}});$("profileForm").addEventListener("submit",saveProfile);$("cvUploadForm").addEventListener("submit",uploadCV);$("cvFileList").addEventListener("click",e=>{const d=e.target.closest("[data-cv-download]"),r=e.target.closest("[data-cv-delete]");if(d)downloadCV(d.dataset.cvDownload);if(r)deleteCV(r.dataset.cvDelete);});$("applicationsList").addEventListener("change",e=>{const el=e.target.closest("[data-app-status]");if(el)updateAppStatus(el.dataset.appStatus,el.value);});$("applicationsList").addEventListener("click",e=>{const rm=e.target.closest("[data-remove-app]"),ed=e.target.closest("[data-edit-app]");if(rm)removeApp(rm.dataset.removeApp);if(ed)editNotes(ed.dataset.editApp);});$("savedDraftsList").addEventListener("click",e=>{const open=e.target.closest("[data-open-draft]"),del=e.target.closest("[data-delete-draft]");if(open)openDraft(open.dataset.openDraft);if(del)deleteDraft(del.dataset.deleteDraft);});$("applicationSearch").addEventListener("input",renderApps);$("applicationStatusFilter").addEventListener("change",renderApps);$("addManualApplication").addEventListener("click",()=>{if(!requireUser())return;$("manualAppForm").hidden=!$("manualAppForm").hidden;});$("cancelManualApplication").addEventListener("click",()=>$("manualAppForm").hidden=true);$("manualAppForm").addEventListener("submit",async e=>{e.preventDefault();const title=trim($("manualTitle").value),institution=trim($("manualInstitution").value),record={title,institution,deadline:safeDeadline($("manualDeadline").value),official_url:trim($("manualUrl").value),opportunity_key:("manual:"+title+"|"+institution).slice(0,450),status:"interested"};const saved=await persistApplication(record);if(saved){$("manualAppForm").reset();$("manualAppForm").hidden=true;}});$("dismissSetupNotice").addEventListener("click",()=>$("setupNotice").hidden=true);}
 function start(){ $("deskYear")&&($("deskYear").textContent=new Date().getFullYear());try{selected=JSON.parse(sessionStorage.getItem(SELECTED_KEY)||"null");}catch{selected=null;}if(selected&&trim(selected.title)){$("selectedOpportunityCard").hidden=false;$("selectedOppTitle").textContent=trim(selected.title);$("selectedOppMeta").textContent=[valueFrom(["hosting_institution","funding_organization","institution"]),valueFrom(["location"]),valueFrom(["closing_date","deadline","application_deadline"])?"Deadline: "+valueFrom(["closing_date","deadline","application_deadline"]):""].filter(Boolean).join(" · ");const url=safeHTTP(valueFrom(["application_url","source_url","url"]));if(url){$("selectedOppOfficial").href=url;$("selectedOppOfficial").hidden=false;}}bind();const query=new URLSearchParams(location.search),requested=query.get("tool");if(requested==="tracker"){pendingAutoTrack=true;goView("applications");}else if(tools[requested])renderTool(requested);else goView("dashboard");initAuth();}
 document.addEventListener("DOMContentLoaded",start);
 })();
