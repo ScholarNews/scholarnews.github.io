@@ -606,7 +606,7 @@ async function onAuthChanged(nextUser){
  const accountChanged=previousId!==nextId;
  const generation=++sessionGeneration;
  user=incoming;
- if(accountChanged)clearPrivateWorkspaceUI();
+ if(previousId&&accountChanged)clearPrivateWorkspaceUI();
  if(!user){
   apps=[];drafts=[];profile={};cvFiles=[];
   renderApps();renderDrafts();updateStats();syncAuth();
