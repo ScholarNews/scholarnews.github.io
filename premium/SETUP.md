@@ -42,8 +42,18 @@ If your Cloudflare hostname is different, use the exact hostname you test. Add a
 
 Do not upload sensitive documents until you have tested account ownership and access rules. The default email sender is deliberately rate-limited and is not suitable for repeated production sign-up/reset emails. If you see “email rate limit exceeded”, stop retrying and wait for the limit to reset. For reliable delivery, configure a trusted custom SMTP provider in Supabase Authentication settings and verify its sender/domain. Ensure the Site URL and Redirect URLs above include the exact `/premium/` URL used by students.
 
-## Included
+## Fix: “Upload failed: Bucket not found”
 
+The CV uploader uses a private Storage bucket whose exact ID is `student-cvs`. This error means that bucket is missing from the Supabase project the website is currently contacting, or the website's `premium/config.js` points to a different project than the one where the SQL was run.
+
+1. Open the Supabase dashboard and select the project whose Project URL is configured in `premium/config.js`.
+2. In **SQL Editor**, run the complete `supabase/fix-cv-storage.sql` file from this repository. Alternatively, re-run the complete `supabase/schema.sql`.
+3. Open **Storage → Buckets** and verify a bucket with ID `student-cvs` exists and is **private**.
+4. Reload the application desk and retry your CV upload.
+
+Do not create a public bucket, do not change the app's bucket name, and do not place a service-role or secret key in the website. The repair SQL creates/updates the private bucket and re-establishes the per-user storage access policies.
+
+${insertBefore}
 - Email/password sign-up, sign-in and password reset.
 - Student profile with education details and CV text.
 - Private PDF, DOC and DOCX uploads up to 10 MB, with download and delete.
