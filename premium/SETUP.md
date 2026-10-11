@@ -95,3 +95,7 @@ Text is extracted locally in the browser; the original file is uploaded to the p
 - Editable drafts saved to the signed-in account.
 
 Templates and eligibility extraction are not AI-driven in this release. The tracker records an applicant’s progress on Scholar News; it does not submit applications to external institutions or send automatic email/push reminders.
+
+## Improved CV parsing and motivation suggestions
+
+The Application Studio pre-fills profile details after account data finishes loading, including when a student opens a direct URL such as \`/premium/?tool=cover\`. PDF text extraction retains line positions so section headings can be identified. The evidence field prefers professional summary, experience, research, education and skills rather than copying page numbers or contact details as the entire background. Three editable motivation starting points are available in the cover-letter and statement tools: background fit, contribution, and career development. Suggestions are rule-based and should be personalized; they do not invent verified achievements or submit documents automatically.
