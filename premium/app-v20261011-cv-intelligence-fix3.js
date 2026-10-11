@@ -44,7 +44,7 @@ function cleanCVForEvidence(value){
   .replace(/^\s*(?:PG|PAGE)\.?\s*\d+\s*(?:\/|OF)\s*\d+\s*$/gim,"")
   .replace(/\b(?:https?:\/\/|www\.)\S+/gi," ")
   .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi," ")
-  .replace(/\+?\d[\d\s().-]{7,}\d/g," ")
+  .replace(/\+?\d[\d\s().-]{7,}\d/g,match=>(match.match(/\d/g)||[]).length>=9?" ":match)
   .replace(/\|\s*(?:\|\s*)+/g," | "));
 }
 function cleanExtractedCVText(value){
@@ -114,7 +114,7 @@ function guessCVFacts(raw){
   candidate=candidate.replace(/^\s*(?:PG|PAGE)\.?\s*\d+\s*(?:\/|OF)\s*\d+\s*/i,"")
    .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi," ")
    .replace(/(?:https?:\/\/|www\.)\S+/gi," ")
-   .replace(/\+?\d[\d\s().-]{7,}\d/g," ")
+   .replace(/\+?\d[\d\s().-]{7,}\d/g,match=>(match.match(/\d/g)||[]).length>=9?" ":match)
    .replace(/\b(?:ORCID|GOOGLE SCHOLAR|LINKEDIN|GITHUB)\b/gi," ")
    .replace(/\s+/g," ").trim();
   if(candidate.length>65||skip.test(candidate)||/@|https?:\/\/|www\.|[\d]{3,}/i.test(candidate))continue;
@@ -196,7 +196,7 @@ function guessCVFacts(raw){
  let country=findCountry(countryHeader)||findCountry(text.slice(0,12000));
  if(!country){
   for(const [name,code] of countries){
-   const codeRe=new RegExp("(?:\\||,|\\(|/)\\s*"+code+"\\b(?:\\s*[)|,;]|\\s*$)","i");
+   const codeRe=new RegExp("(?:\\||,|\\(|/)\\s*"+code+"\\b(?:\\s*[)|,;|]|\\s*$)","i");
    if(codeRe.test(countryHeader)){country=name+" ("+code+")";break;}
   }
  }
