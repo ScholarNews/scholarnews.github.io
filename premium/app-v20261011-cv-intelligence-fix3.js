@@ -264,9 +264,10 @@ function fillBlankProfileInputs(facts){
  if(facts.email){const emailField=$("profileEmail");if(emailField&&(!trim(emailField.value)||trim(emailField.value)===user.email))emailField.value=facts.email;}
  Object.entries(values).forEach(([id,value])=>{const el=$(id);if(el&&value&&!trim(el.value))el.value=value;});
 }
-async function saveExtractedCVToProfile(text,facts){
+async function saveExtractedCVToProfile(text,facts,ownerId=user?.id){
+ if(!ownerId||!user||user.id!==ownerId)return {message:"Your account changed during CV processing. Please upload the file again while signed in."};
  const payload={
-  user_id:user.id,email:trim($("profileEmail").value)||facts.email||profile.email||user.email,
+  user_id:ownerId,email:trim($("profileEmail").value)||facts.email||profile.email||user.email,
   full_name:trim($("profileName").value)||profile.full_name||user.user_metadata?.full_name||facts.full_name||"",
   country:trim($("profileCountry").value)||facts.country||profile.country||"",
   institution:trim($("profileInstitution").value)||profile.institution||facts.institution||"",
@@ -275,6 +276,8 @@ async function saveExtractedCVToProfile(text,facts){
   cv_text:cleanExtractedCVText(text),updated_at:new Date().toISOString()
  };
  const {error}=await db.from("profiles").upsert(payload);
+ if(!user||user.id!==ownerId)return {message:"Your account changed during CV processing. Please upload the file again while signed in."};
+ if(error)return error;
  profile=payload;
  $("profileName").value=payload.full_name;
  $("profileCountry").value=payload.country;
@@ -282,7 +285,6 @@ async function saveExtractedCVToProfile(text,facts){
  $("profileLevel").value=payload.education_level;
  $("profileDiscipline").value=payload.discipline;
  $("profileCVText").value=payload.cv_text;
- if(error)return error;
  return null;
 }
 
@@ -499,6 +501,7 @@ async function saveProfile(e){e.preventDefault();if(!requireReady()||!requireUse
 function safeFileName(name){return trim(name).replace(/[^a-z0-9._-]/gi,"-").slice(0,90)||"cv";}
 async function uploadCV(e){
  e.preventDefault();if(!requireReady()||!requireUser())return;
+ const ownerId=user.id;
  const file=$("cvFile").files[0];if(!file){status("cvUploadStatus","Choose a CV file first.","error");return;}
  if(file.size>10*1024*1024){status("cvUploadStatus","This file is larger than 10 MB.","error");return;}
  const ext=(file.name.split(".").pop()||"").toLowerCase();
@@ -508,15 +511,18 @@ async function uploadCV(e){
   status("cvUploadStatus","Reading CV text locally in your browser…");
   try{extractedText=await extractCVTextFromFile(file,ext);if(!extractedText)throw new Error("No readable text was found.");}
   catch(error){extractError=error.message||"Text extraction failed.";}
- }else extractError="Legacy .doc files can be uploaded privately, but automatic extraction requires PDF or DOCX. Save a copy as PDF or DOCX and upload that copy to analyze it.";
- const path=user.id+"/"+Date.now()+"-"+safeFileName(file.name);
+ }else extractError="Legacy .doc files can be uploaded privately, but automatic extraction requires PDF or DOCX. Save a copy as PDF or DOCX and upload that copy to extract it.";
+ if(!user||user.id!==ownerId)return;
+ const path=ownerId+"/"+Date.now()+"-"+safeFileName(file.name);
  status("cvUploadStatus","Uploading your CV to private storage…");
  const {error:upErr}=await db.storage.from("student-cvs").upload(path,file,{upsert:false,contentType:file.type||"application/octet-stream"});
+ if(!user||user.id!==ownerId)return;
  if(upErr){
   const msg=/bucket.*not.*found|not found.*bucket/i.test(upErr.message||"")?"CV storage bucket is missing. Run supabase/fix-cv-storage.sql in this Supabase project; keep the bucket private.":/mime|content type|not allowed/i.test(upErr.message||"")?"This file type is not allowed by the storage bucket. Check its allowed MIME types in Supabase Storage.":"Upload failed: "+upErr.message;
   status("cvUploadStatus",msg,"error");return;
  }
- const {error:recErr}=await db.from("cv_files").insert({user_id:user.id,storage_path:path,original_filename:file.name.slice(0,255),content_type:file.type||"application/octet-stream",size_bytes:file.size});
+ const {error:recErr}=await db.from("cv_files").insert({user_id:ownerId,storage_path:path,original_filename:file.name.slice(0,255),content_type:file.type||"application/octet-stream",size_bytes:file.size});
+ if(!user||user.id!==ownerId)return;
  if(recErr){await db.storage.from("student-cvs").remove([path]);status("cvUploadStatus","File record could not be saved: "+recErr.message,"error");return;}
  $("cvFile").value="";
  let profileSaveError=null;
@@ -524,21 +530,23 @@ async function uploadCV(e){
   const facts=guessCVFacts(extractedText);
   const cleanedText=cleanExtractedCVText(extractedText);
   fillBlankProfileInputs(facts);
-  profileSaveError=await saveExtractedCVToProfile(cleanedText,facts);
+  profileSaveError=await saveExtractedCVToProfile(cleanedText,facts,ownerId);
+  if(!user||user.id!==ownerId)return;
   if(profileSaveError){
    status("profileSaveStatus","CV text was extracted, but saving it to your profile failed: "+profileSaveError.message+". Review the CV text and click Save my profile.","error");
    status("cvUploadStatus","CV uploaded privately and text extracted, but it could not be synced to your profile. The cleaned text is available in the CV text field for review.","error");
   }else{
-   status("profileSaveStatus","CV text and suggested details saved. Review the detected name, country/residency, education, institution and field below; edit anything inaccurate before generating documents.","success");
-   status("cvUploadStatus","CV uploaded privately. Cleaned text and detected country/residency saved to your reusable profile; application documents will now prefill from it. Check all generated details before use.","success");
+   status("profileSaveStatus","CV text and suggested details saved to this account. Review the detected name, country/residency, education, institution and field below; edit anything inaccurate before generating documents.","success");
+   status("cvUploadStatus","CV uploaded privately. Cleaned text and detected country/residency saved to this account; application documents will now prefill from it. Check all generated details before use.","success");
   }
  }else{
   status("cvUploadStatus","CV uploaded privately, but automatic text extraction was not completed: "+extractError,"error");
  }
  await loadCVFiles();
+ if(!user||user.id!==ownerId)return;
  if(extractedText){
   $("profileCVText").scrollIntoView({behavior:"smooth",block:"center"});
-  toast(profileSaveError?"CV text extracted; please save it to your profile.":"CV uploaded and reusable profile updated.");
+  toast(profileSaveError?"CV text extracted; please save it to your profile.":"CV uploaded and this account's reusable profile updated.");
  }else toast("CV uploaded to private storage.");
 }async function loadCVFiles(){
  if(!user||!db)return;
