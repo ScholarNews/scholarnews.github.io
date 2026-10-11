@@ -645,7 +645,39 @@ function authErrorMessage(error){
   return "This password-reset link is invalid or expired. Request one new reset email and open its latest link.";
  return message;
 }
-fn=>fn
+async function authSubmit(e){
+ e.preventDefault();if(!requireReady())return;
+ const email=trim($("authEmail").value),password=$("authPassword").value;
+ if(!email){status("authStatus","Enter your email address first.","error");return;}
+ if(password.length<8){status("authStatus","Use a password with at least 8 characters.","error");return;}
+ const button=$("authSubmit");button.disabled=true;
+ $("resendConfirmationButton").hidden=true;
+ status("authStatus",authMode==="signup"?"Creating your account…":"Signing in…");
+ try{
+  const result=authMode==="signup"
+   ?await db.auth.signUp({email,password,options:{data:{full_name:trim($("authName").value)},emailRedirectTo:new URL("./",location.href).href}})
+   :await db.auth.signInWithPassword({email,password});
+  if(result.error){
+   const lower=String(result.error.message||"").toLowerCase();
+   if(lower.includes("email not confirmed")||lower.includes("email_not_confirmed"))$("resendConfirmationButton").hidden=false;
+   status("authStatus",authErrorMessage(result.error),"error");return;
+  }
+  if(authMode==="signup"&&!result.data.session){
+   const {data:sessionData}=await db.auth.getSession();
+   if(sessionData?.session)await db.auth.signOut();
+   await onAuthChanged(null);
+   $("resendConfirmationButton").hidden=false;
+   status("authStatus","Your account was created in Supabase, but sign-in is not available until email confirmation is completed. Check your inbox/spam folder, or click “Resend confirmation email” below. If emails do not arrive, review Supabase Authentication → Email/SMTP settings.","success");
+   return;
+  }
+  if(!result.data.user){status("authStatus","Supabase did not return a user for this request. Please retry sign-in, or check the account status in Supabase Authentication.","error");return;}
+  $("resendConfirmationButton").hidden=true;
+  await onAuthChanged(result.data.user);
+  status("authStatus","Signed in successfully.","success");goView("dashboard");
+  toast(authMode==="signup"?"Welcome to Scholar News.":"Welcome back.");
+ }catch(error){status("authStatus",authErrorMessage(error),"error");}
+ finally{button.disabled=false;}
+}
 async function resetPassword(){
  if(!requireReady())return;
  const email=trim($("authEmail").value);
